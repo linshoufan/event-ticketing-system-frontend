@@ -27,6 +27,9 @@ function Navbar() {
     textDecoration: "none",
   })
 
+  const mainPages = ["/events", "/admin/events", "/admin/hr", "/my-transactions", "/my-tickets", "/profile", "/admin/users"]
+  const isMainPage = mainPages.some(p => location.pathname === p)
+
   return (
     <nav style={{
       display: "flex",
@@ -39,9 +42,19 @@ function Navbar() {
       top: 0,
       zIndex: 100,
     }}>
-      <span style={{ fontWeight: "bold", fontSize: "16px" }}>
-        企業活動訂票系統
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>
+          企業活動訂票系統
+        </span>
+        {!isMainPage && (
+          <span
+            onClick={() => window.history.back()}
+            style={{ cursor: "pointer", color: "#aaa", fontSize: "14px" }}
+          >
+            ← 返回
+          </span>
+        )}
+      </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         {role === "employee" && (
@@ -85,20 +98,20 @@ function Navbar() {
         )}
 
         {role === "hr" && (
-            <>
-                <span
-                style={linkStyle("/events")}
-                onClick={() => navigate("/events")}
-                >
-                活動列表
-                </span>
-                <span
-                style={linkStyle("/admin/hr")}
-                onClick={() => navigate("/admin/hr")}
-                >
-                統計報表
-                </span>
-            </>
+          <>
+            <span
+              style={linkStyle("/events")}
+              onClick={() => navigate("/events")}
+            >
+              活動列表
+            </span>
+            <span
+              style={linkStyle("/admin/hr")}
+              onClick={() => navigate("/admin/hr")}
+            >
+              統計報表
+            </span>
+          </>
         )}
         <span
           style={linkStyle("/profile")}
