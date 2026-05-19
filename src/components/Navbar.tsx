@@ -43,9 +43,6 @@ function Navbar() {
       zIndex: 100,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <span style={{ fontWeight: "bold", fontSize: "16px" }}>
-          企業活動訂票系統
-        </span>
         {!isMainPage && (
           <span
             onClick={() => window.history.back()}
@@ -54,6 +51,9 @@ function Navbar() {
             ← 返回
           </span>
         )}
+        <span style={{ fontWeight: "bold", fontSize: "16px" }}>
+          企業活動訂票系統
+        </span>
       </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
