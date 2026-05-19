@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 
 const CATEGORIES = ["outdoor", "food", "music", "sports", "travel"]
 
@@ -16,7 +15,6 @@ const MOCK_PROFILE = {
 }
 
 function ProfilePage() {
-  const navigate = useNavigate()
   const role = localStorage.getItem("role")
 
   const [preferences, setPreferences] = useState<string[]>(MOCK_PROFILE.preferences)

@@ -49,14 +49,7 @@ function UserManagePage() {
     setUsers(prev => prev.filter(u => u.userId !== userId))
   }
 
-  function getRoleLabel(role: string) {
-    const map: Record<string, string> = {
-      welfare_member: "福委會",
-      employee: "一般員工",
-      hr: "HR",
-    }
-    return map[role] ?? role
-  }
+  
 
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>

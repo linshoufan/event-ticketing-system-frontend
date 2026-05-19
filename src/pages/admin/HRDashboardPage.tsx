@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { MOCK_EVENTS } from "../../mock/events"
 
 const MOCK_HR_STATS = [
   {
@@ -122,8 +121,7 @@ function HRDashboardPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {filtered.map(stat => {
           const cap = stat.ticketLimit ?? stat.totalConfirmed
-          const registrationRate = cap > 0 ? Math.round(stat.totalConfirmed / cap * 100) : 100
-          const checkinRate = stat.totalConfirmed > 0
+          
             ? Math.round(stat.totalCheckedIn / stat.totalConfirmed * 100)
             : 0
 
