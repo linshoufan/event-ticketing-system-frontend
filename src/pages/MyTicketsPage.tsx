@@ -1,26 +1,16 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getTickets } from "../api/tickets"
+import { MOCK_TICKETS } from "../mock/tickets"
 import type { Ticket, TicketStatus } from "../types"
 
 function MyTicketsPage() {
   const navigate = useNavigate()
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<TicketStatus | "">("")
 
-  useEffect(() => {
-    fetchTickets()
-  }, [filter])
-
-  async function fetchTickets() {
-    setLoading(true)
-    const data = await getTickets({
-      status: filter || undefined,
-    })
-    setTickets(data)
-    setLoading(false)
-  }
+  const filtered = MOCK_TICKETS.filter(t => {
+    if (filter && t.status !== filter) return false
+    return true
+  })
 
   function getStatusLabel(status: TicketStatus) {
     const map: Record<TicketStatus, string> = {
@@ -57,13 +47,11 @@ function MyTicketsPage() {
         </select>
       </div>
 
-      {loading ? (
-        <p>載入中...</p>
-      ) : tickets.length === 0 ? (
+      {filtered.length === 0 ? (
         <p>沒有票券</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {tickets.map(ticket => (
+          {filtered.map((ticket: Ticket) => (
             <div
               key={ticket.ticketId}
               onClick={() => navigate(`/my-tickets/${ticket.ticketId}`)}

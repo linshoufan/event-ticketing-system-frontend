@@ -1,99 +1,52 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { MOCK_USERS } from "../../mock/users"
+
+type UserStatus = "active" | "locked"
 
 interface User {
   userId: string
   username: string
   role: string
-  registrationStatus: "active" | "locked"
+  registrationStatus: UserStatus
   unlockAt: string | null
-}
-
-const BASE_URL = "https://api.your-domain.com/v1"
-
-function getToken() {
-  return localStorage.getItem("token")
-}
-
-function getAuthHeaders(): HeadersInit {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${getToken()}`,
-  }
 }
 
 function UserManagePage() {
   const navigate = useNavigate()
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  const [users, setUsers] = useState<User[]>(MOCK_USERS)
   const [roleFilter, setRoleFilter] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
 
-  useEffect(() => {
-    fetchUsers()
-  }, [roleFilter, statusFilter])
+  const filtered = users.filter(u => {
+    if (roleFilter && u.role !== roleFilter) return false
+    if (statusFilter && u.registrationStatus !== statusFilter) return false
+    return true
+  })
 
-  async function fetchUsers() {
-    setLoading(true)
-    const query = new URLSearchParams()
-    if (roleFilter) query.set("role", roleFilter)
-    if (statusFilter) query.set("status", statusFilter)
-    const res = await fetch(`${BASE_URL}/users?${query}`, {
-      headers: getAuthHeaders(),
-    })
-    const json = await res.json()
-    setUsers(json.data)
-    setLoading(false)
-  }
-
-  async function handleUnlock(userId: string) {
+  function handleUnlock(userId: string) {
     if (!confirm("確定要解鎖這個使用者嗎？")) return
-    try {
-      const res = await fetch(`${BASE_URL}/users/${userId}/unlock`, {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-      })
-      if (!res.ok) throw new Error()
-      setUsers(prev =>
-        prev.map(u =>
-          u.userId === userId
-            ? { ...u, registrationStatus: "active", unlockAt: null }
-            : u
-        )
+    // 之後換成真的 API
+    setUsers(prev =>
+      prev.map(u =>
+        u.userId === userId
+          ? { ...u, registrationStatus: "active" as UserStatus, unlockAt: null }
+          : u
       )
-    } catch {
-      alert("解鎖失敗")
-    }
+    )
   }
 
-  async function handleChangeRole(userId: string, role: string) {
-    try {
-      const res = await fetch(`${BASE_URL}/users/${userId}/role`, {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ role }),
-      })
-      if (!res.ok) throw new Error()
-      setUsers(prev =>
-        prev.map(u => u.userId === userId ? { ...u, role } : u)
-      )
-    } catch {
-      alert("變更角色失敗")
-    }
+  function handleChangeRole(userId: string, role: string) {
+    // 之後換成真的 API
+    setUsers(prev =>
+      prev.map(u => u.userId === userId ? { ...u, role } : u)
+    )
   }
 
-  async function handleDelete(userId: string) {
+  function handleDelete(userId: string) {
     if (!confirm("確定要刪除這個使用者嗎？")) return
-    try {
-      const res = await fetch(`${BASE_URL}/users/${userId}`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      })
-      if (!res.ok) throw new Error()
-      setUsers(prev => prev.filter(u => u.userId !== userId))
-    } catch {
-      alert("刪除失敗")
-    }
+    // 之後換成真的 API
+    setUsers(prev => prev.filter(u => u.userId !== userId))
   }
 
   function getRoleLabel(role: string) {
@@ -134,9 +87,7 @@ function UserManagePage() {
         </select>
       </div>
 
-      {loading ? (
-        <p>載入中...</p>
-      ) : users.length === 0 ? (
+      {filtered.length === 0 ? (
         <p>沒有使用者</p>
       ) : (
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -149,7 +100,7 @@ function UserManagePage() {
             </tr>
           </thead>
           <tbody>
-            {users.map(user => (
+            {filtered.map(user => (
               <tr key={user.userId} style={{ borderBottom: "1px solid #eee" }}>
                 <td style={{ padding: "8px" }}>{user.username}</td>
                 <td style={{ padding: "8px" }}>

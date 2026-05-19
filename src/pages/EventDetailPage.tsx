@@ -1,77 +1,36 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { getEventById, checkEligibility } from "../api/events"
-import { createTransaction } from "../api/transactions"
-import type { Event } from "../types"
+import { MOCK_EVENTS, MOCK_ELIGIBILITY } from "../mock/events"
+import { MOCK_TRANSACTIONS } from "../mock/transactions"
 
 function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
-  const [event, setEvent] = useState<Event | null>(null)
-  const [eligibility, setEligibility] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [registering, setRegistering] = useState(false)
+  const event = MOCK_EVENTS.find(e => e.eventId === eventId) ?? null
+  const eligibility = MOCK_ELIGIBILITY
+  const alreadyRegistered = MOCK_TRANSACTIONS.some(t => t.eventId === eventId)
+
   const [dietType, setDietType] = useState<"veg" | "non-veg" | "none">("none")
   const [selfDriving, setSelfDriving] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
   const [message, setMessage] = useState("")
-
-  useEffect(() => {
-    if (!eventId) return
-    Promise.all([
-      getEventById(eventId),
-      checkEligibility(eventId)
-    ]).then(([eventData, eligibilityData]) => {
-      setEvent(eventData)
-      setEligibility(eligibilityData)
-      setLoading(false)
-    })
-  }, [eventId])
+  const [registering, setRegistering] = useState(false)
 
   async function handleRegister() {
-    if (!eventId) return
     setRegistering(true)
-    try {
-      const res = await createTransaction({
-        eventId,
-        guestCount,
-        dietType,
-        selfDriving,
-        saveAutofill: true,
-      })
-      if (res.status === "confirmed") {
-        setMessage("報名成功！")
-        navigate(`/my-tickets/${res.ticketId}`)
-      } else {
-        setMessage(`已加入候補，你是第 ${res.waitlistNumber} 號`)
-      }
-    } catch (err: any) {
-      if (err.code === "ACCOUNT_LOCKED") {
-        setMessage(`帳號已鎖定，解鎖時間：${new Date(err.unlockAt).toLocaleString("zh-TW")}`)
-      } else {
-        setMessage("報名失敗，請稍後再試")
-      }
-    }
-    setRegistering(false)
+    // 之後換成真的 API
+    // await createTransaction({ eventId, guestCount, dietType, selfDriving, saveAutofill: true })
+    setTimeout(() => {
+      setMessage("報名成功！（假資料）")
+      setRegistering(false)
+    }, 500)
   }
 
   function getActionButton() {
     if (!eligibility || !event) return null
 
-    if (!eligibility.eligible) {
-      if (eligibility.reason === "LOCKED") {
-        return (
-          <div>
-            <p style={{ color: "red" }}>
-              帳號已鎖定，解鎖時間：
-              {new Date(eligibility.unlockAt).toLocaleString("zh-TW")}
-            </p>
-          </div>
-        )
-      }
-      if (eligibility.reason === "ALREADY_REGISTERED") {
-        return <p style={{ color: "gray" }}>您已報名此活動</p>
-      }
+    if (alreadyRegistered) {
+      return <p style={{ color: "gray" }}>您已報名此活動</p>
     }
 
     if (event.status === "registering") {
@@ -93,7 +52,6 @@ function EventDetailPage() {
     return <p style={{ color: "gray" }}>目前無法報名</p>
   }
 
-  if (loading) return <p>載入中...</p>
   if (!event) return <p>找不到活動</p>
 
   return (
@@ -131,10 +89,7 @@ function EventDetailPage() {
         <h3>報名資料</h3>
         <div>
           <label>飲食需求：</label>
-          <select
-            value={dietType}
-            onChange={e => setDietType(e.target.value as any)}
-          >
+          <select value={dietType} onChange={e => setDietType(e.target.value as any)}>
             <option value="none">無需求</option>
             <option value="veg">素食</option>
             <option value="non-veg">葷食</option>

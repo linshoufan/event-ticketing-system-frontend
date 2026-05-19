@@ -1,53 +1,29 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { getTicketById, checkin } from "../api/tickets"
-import type { Ticket } from "../types"
+import { MOCK_TICKETS } from "../mock/tickets"
 
 function TicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>()
   const navigate = useNavigate()
-  const [ticket, setTicket] = useState<Ticket | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [ticket, setTicket] = useState(
+    MOCK_TICKETS.find(t => t.ticketId === ticketId) ?? null
+  )
   const [checkingIn, setCheckingIn] = useState(false)
   const [message, setMessage] = useState("")
 
-  useEffect(() => {
-    if (!ticketId) return
-    getTicketById(ticketId).then(data => {
-      setTicket(data)
-      setLoading(false)
-    })
-  }, [ticketId])
-
   async function handleCheckin() {
-    if (!ticketId) return
     setCheckingIn(true)
     setMessage("")
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const res = await checkin(ticketId, {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          })
-          if (res.checkedIn) {
-            setMessage("報到成功！")
-            const updated = await getTicketById(ticketId)
-            setTicket(updated)
-          }
-        } catch (err: any) {
-          if (err.code === "OUT_OF_RANGE") {
-            setMessage("您不在活動地點附近，請移動至現場後再試")
-          } else if (err.code === "TICKET_INVALID") {
-            setMessage("此票券已使用或無效")
-          } else if (err.code === "NOT_EVENT_TIME") {
-            setMessage("尚未到達活動時間")
-          } else {
-            setMessage("報到失敗，請稍後再試")
-          }
-        }
-        setCheckingIn(false)
+      () => {
+        // 之後換成真的 API
+        // await checkin(ticketId, { latitude, longitude })
+        setTimeout(() => {
+          setMessage("報到成功！（假資料）")
+          if (ticket) setTicket({ ...ticket, status: "used", checkinAvailable: false })
+          setCheckingIn(false)
+        }, 500)
       },
       () => {
         setMessage("無法取得您的位置，請確認已開啟定位權限")
@@ -65,7 +41,6 @@ function TicketDetailPage() {
     return map[status] ?? status
   }
 
-  if (loading) return <p>載入中...</p>
   if (!ticket) return <p>找不到票券</p>
 
   return (

@@ -7,6 +7,7 @@ import TicketDetailPage from "./pages/TicketDetailPage"
 import EventManagePage from "./pages/admin/EventManagePage"
 import RegistrationDetailPage from "./pages/admin/RegistrationDetailPage"
 import UserManagePage from "./pages/admin/UserManagePage"
+import CreateEventPage from "./pages/admin/CreateEventPage"
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/my-tickets" element={<MyTicketsPage />} />
         <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
         <Route path="/admin/events" element={<EventManagePage />} />
+        <Route path="/admin/events/new" element={<CreateEventPage />} />
         <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
         <Route path="/admin/users" element={<UserManagePage />} />
       </Routes>

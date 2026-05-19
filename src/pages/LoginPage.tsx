@@ -1,26 +1,20 @@
-import { useEffect } from "react"
-import { getLoginUrl, handleCallback, saveToken } from "../api/auth"
+import { useNavigate } from "react-router-dom"
+import { saveToken } from "../api/auth"
 
 function LoginPage() {
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get("code")
+  const navigate = useNavigate()
 
-    if (code) {
-      handleCallback(code).then(({ token, role }) => {
-        saveToken(token)
-        if (role === "welfare_member") {
-          window.location.href = "/admin/events"
-        } else {
-          window.location.href = "/events"
-        }
-      })
+  function handleFakeLogin(role: string) {
+    saveToken(`fake-token-${role}`)
+    localStorage.setItem("role", role)
+
+    if (role === "welfare_member") {
+      navigate("/admin/events")
+    } else if (role === "hr") {
+      navigate("/admin/events")
+    } else {
+      navigate("/events")
     }
-  }, [])
-
-  async function handleLogin() {
-    const url = await getLoginUrl()
-    window.location.href = url
   }
 
   return (
@@ -30,19 +24,31 @@ function LoginPage() {
       alignItems: "center",
       justifyContent: "center",
       height: "100vh",
-      gap: "24px"
+      gap: "16px"
     }}>
       <h1>企業活動訂票系統</h1>
-      <button
-        onClick={handleLogin}
-        style={{
-          padding: "12px 24px",
-          fontSize: "16px",
-          cursor: "pointer"
-        }}
-      >
-        使用 Google 帳號登入
-      </button>
+      <p style={{ color: "#666" }}>（開發模式 - 選擇角色登入）</p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "300px" }}>
+        <button
+          onClick={() => handleFakeLogin("employee")}
+          style={{ padding: "12px", fontSize: "16px", cursor: "pointer" }}
+        >
+          以一般員工登入
+        </button>
+        <button
+          onClick={() => handleFakeLogin("welfare_member")}
+          style={{ padding: "12px", fontSize: "16px", cursor: "pointer" }}
+        >
+          以福委會登入
+        </button>
+        <button
+          onClick={() => handleFakeLogin("hr")}
+          style={{ padding: "12px", fontSize: "16px", cursor: "pointer" }}
+        >
+          以 HR 登入
+        </button>
+      </div>
     </div>
   )
 }

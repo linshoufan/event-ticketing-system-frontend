@@ -1,32 +1,23 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getEvents } from "../api/events"
+import { MOCK_EVENTS } from "../mock/events"
 import type { Event } from "../types"
 
 const CATEGORIES = ["outdoor", "food", "music", "sports", "travel"]
 
 function EventListPage() {
   const navigate = useNavigate()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
+  const [events] = useState<Event[]>(MOCK_EVENTS)
   const [keyword, setKeyword] = useState("")
   const [category, setCategory] = useState("")
   const [status, setStatus] = useState("")
 
-  useEffect(() => {
-    fetchEvents()
-  }, [keyword, category, status])
-
-  async function fetchEvents() {
-    setLoading(true)
-    const res = await getEvents({
-      keyword: keyword || undefined,
-      category: category || undefined,
-      status: status || undefined,
-    })
-    setEvents(res.data)
-    setLoading(false)
-  }
+  const filtered = events.filter(e => {
+    if (keyword && !e.name.includes(keyword) && !e.description.includes(keyword)) return false
+    if (category && e.category !== category) return false
+    if (status && e.status !== status) return false
+    return true
+  })
 
   function getStatusLabel(status: string) {
     const map: Record<string, string> = {
@@ -77,13 +68,11 @@ function EventListPage() {
         </select>
       </div>
 
-      {loading ? (
-        <p>載入中...</p>
-      ) : events.length === 0 ? (
+      {filtered.length === 0 ? (
         <p>沒有活動</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {events.map(event => (
+          {filtered.map(event => (
             <div
               key={event.eventId}
               onClick={() => navigate(`/events/${event.eventId}`)}

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getEvents, deleteEvent, updateEvent } from "../../api/events"
 import type { Event } from "../../types"
+import { MOCK_EVENTS } from "../../mock/events"
+
 
 function EventManagePage() {
   const navigate = useNavigate()
@@ -9,35 +10,21 @@ function EventManagePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchEvents()
+    setTimeout(() => {
+      setEvents(MOCK_EVENTS)
+      setLoading(false)
+    }, 500)
   }, [])
-
-  async function fetchEvents() {
-    setLoading(true)
-    const res = await getEvents()
-    setEvents(res.data)
-    setLoading(false)
-  }
 
   async function handleDelete(eventId: string) {
     if (!confirm("確定要刪除這個活動嗎？")) return
-    try {
-      await deleteEvent(eventId)
-      setEvents(prev => prev.filter(e => e.eventId !== eventId))
-    } catch {
-      alert("刪除失敗，此活動已發布或已開始報名")
-    }
+    setEvents(prev => prev.filter(e => e.eventId !== eventId))
   }
 
   async function handlePublish(eventId: string) {
-    try {
-      await updateEvent(eventId, { isDraft: false })
-      setEvents(prev =>
-        prev.map(e => e.eventId === eventId ? { ...e, isDraft: false } : e)
-      )
-    } catch {
-      alert("發布失敗")
-    }
+    setEvents(prev =>
+      prev.map(e => e.eventId === eventId ? { ...e, isDraft: false } : e)
+    )
   }
 
   function getStatusLabel(status: string) {
@@ -55,7 +42,10 @@ function EventManagePage() {
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1>活動管理</h1>
-        <button onClick={() => navigate("/admin/users")}>使用者管理</button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button onClick={() => navigate("/admin/events/new")}>新增活動</button>
+          <button onClick={() => navigate("/admin/users")}>使用者管理</button>
+        </div>
       </div>
 
       {loading ? (
