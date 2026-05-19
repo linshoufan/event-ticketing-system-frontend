@@ -85,14 +85,20 @@ function Navbar() {
         )}
 
         {role === "hr" && (
-          <>
-            <span
-              style={linkStyle("/events")}
-              onClick={() => navigate("/events")}
-            >
-              活動列表
-            </span>
-          </>
+            <>
+                <span
+                style={linkStyle("/events")}
+                onClick={() => navigate("/events")}
+                >
+                活動列表
+                </span>
+                <span
+                style={linkStyle("/admin/hr")}
+                onClick={() => navigate("/admin/hr")}
+                >
+                統計報表
+                </span>
+            </>
         )}
 
         <button
