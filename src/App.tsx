@@ -12,6 +12,7 @@ import CreateEventPage from "./pages/admin/CreateEventPage"
 import CheckinPage from "./pages/admin/CheckinPage"
 import Navbar from "./components/Navbar"
 import HRDashboardPage from "./pages/admin/HRDashboardPage"
+import ProfilePage from "./pages/ProfilePage"
 
 function Layout() {
   const location = useLocation()
@@ -34,6 +35,7 @@ function Layout() {
         <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
         <Route path="/admin/users" element={<UserManagePage />} />
         <Route path="/admin/hr" element={<HRDashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </>
   )

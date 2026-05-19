@@ -100,7 +100,12 @@ function Navbar() {
                 </span>
             </>
         )}
-
+        <span
+          style={linkStyle("/profile")}
+          onClick={() => navigate("/profile")}
+        >
+          個人資料
+        </span>
         <button
           onClick={handleLogout}
           style={{
