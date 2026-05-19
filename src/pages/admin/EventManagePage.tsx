@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom"
 import type { Event } from "../../types"
 import { MOCK_EVENTS } from "../../mock/events"
 
-
 function EventManagePage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState<Event[]>([])
@@ -95,6 +94,11 @@ function EventManagePage() {
                     onClick={() => navigate(`/admin/events/${event.eventId}/registrations`)}
                   >
                     報名詳情
+                  </button>
+                  <button
+                    onClick={() => navigate(`/admin/events/${event.eventId}/checkin`)}
+                  >
+                    核銷
                   </button>
                   <button
                     onClick={() => handleDelete(event.eventId)}

@@ -9,6 +9,7 @@ import EventManagePage from "./pages/admin/EventManagePage"
 import RegistrationDetailPage from "./pages/admin/RegistrationDetailPage"
 import UserManagePage from "./pages/admin/UserManagePage"
 import CreateEventPage from "./pages/admin/CreateEventPage"
+import CheckinPage from "./pages/admin/CheckinPage"
 import Navbar from "./components/Navbar"
 
 function Layout() {
@@ -29,6 +30,7 @@ function Layout() {
         <Route path="/admin/events" element={<EventManagePage />} />
         <Route path="/admin/events/new" element={<CreateEventPage />} />
         <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
+        <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
         <Route path="/admin/users" element={<UserManagePage />} />
       </Routes>
     </>
