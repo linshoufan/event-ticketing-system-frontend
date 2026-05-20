@@ -88,7 +88,7 @@ function MyTransactionsPage() {
               </p>
 
               <div style={{ display: "flex", gap: "16px", margin: "8px 0 0", fontSize: "14px", color: "#666" }}>
-                <span>飲食：{getDietLabel(t.dietType)}</span>
+                <span>飲食：{getDietLabel(t.dietType as string | null)}</span>
                 <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
                 {t.guestCount > 0 && <span>家屬人數：{t.guestCount}</span>}
               </div>
