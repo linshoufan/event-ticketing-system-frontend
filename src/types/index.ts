@@ -11,19 +11,24 @@ export type TicketStatus = "used" | "unused" | "invalid"
 
 export type RegistrationStatus = "active" | "locked"
 
-export type DietType = "veg" | "non-veg" | "none"
+export type DietType = "veg" | "non-veg" | null
 
 export interface User {
   userId: string
   username: string
+  email: string
   role: Role
-  preferences: string[]
   registrationStatus: RegistrationStatus
   unlockAt: string | null
-  autofill: {
-    dietType: DietType
-    selfDriving: boolean
-  }
+  dietType: "veg" | "non-veg" | null
+  selfDriving: boolean | null
+  tags: string[]
+  preferences: {
+    category: string
+    dietType: "veg" | "non-veg" | null
+    selfDriving: boolean | null
+    guestCount: number | null
+  }[]
 }
 
 export interface Event {

@@ -49,5 +49,16 @@ export async function getMe(): Promise<User> {
     headers: getAuthHeaders(),
   })
   const json = await res.json()
-  return json.data
+  return {
+    userId: json.data.userId,
+    username: json.data.username,
+    email: json.data.email,
+    role: json.data.role,
+    registrationStatus: json.data.registrationStatus,
+    unlockAt: json.data.unlockAt,
+    dietType: json.data.dietType,
+    selfDriving: json.data.selfDriving,
+    tags: json.data.tags ?? [],
+    preferences: json.data.preferences ?? [],
+  }
 }

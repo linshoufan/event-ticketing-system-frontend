@@ -32,11 +32,11 @@ function RegistrationDetailPage() {
     return map[status] ?? "black"
   }
 
-  function getDietLabel(diet: string) {
+  function getDietLabel(diet: string | null) {
+    if (!diet) return "無需求"
     const map: Record<string, string> = {
       veg: "素食",
       "non-veg": "葷食",
-      none: "無需求",
     }
     return map[diet] ?? diet
   }

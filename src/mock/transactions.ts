@@ -10,7 +10,7 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
     status: "waitlist",
     waitlistNumber: 3,
     guestCount: 0,
-    dietType: "none",
+    dietType: null,
     selfDriving: false,
     registeredAt: "2025-05-19T10:00:00Z",
     ticketId: null,

@@ -1,38 +1,44 @@
 import { useState } from "react"
 
-const CATEGORIES = ["outdoor", "food", "music", "sports", "travel"]
+const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
 const MOCK_PROFILE = {
   username: "john.doe",
+  email: "john.doe@company.com",
   role: "employee",
-  preferences: ["outdoor", "food"],
   registrationStatus: "active",
   unlockAt: null as string | null,
-  autofill: {
-    dietType: "non-veg" as "veg" | "non-veg" | "none",
-    selfDriving: true,
-  },
+  dietType: "non-veg" as "veg" | "non-veg" | null,
+  selfDriving: true,
+  tags: ["sport", "food"],
+  preferences: [
+    {
+      category: "sport",
+      dietType: "non-veg" as "veg" | "non-veg" | null,
+      selfDriving: true,
+      guestCount: 0,
+    }
+  ],
 }
 
 function ProfilePage() {
   const role = localStorage.getItem("role")
 
-  const [preferences, setPreferences] = useState<string[]>(MOCK_PROFILE.preferences)
-  const [dietType, setDietType] = useState(MOCK_PROFILE.autofill.dietType)
-  const [selfDriving, setSelfDriving] = useState(MOCK_PROFILE.autofill.selfDriving)
+  const [tags, setTags] = useState<string[]>(MOCK_PROFILE.tags)
+  const [dietType, setDietType] = useState(MOCK_PROFILE.dietType)
+  const [selfDriving, setSelfDriving] = useState(MOCK_PROFILE.selfDriving ?? false)
   const [saved, setSaved] = useState(false)
 
-  function togglePreference(category: string) {
-    setPreferences(prev =>
-      prev.includes(category)
-        ? prev.filter(p => p !== category)
-        : [...prev, category]
+  function toggleTag(tag: string) {
+    setTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
     )
   }
 
   async function handleSave() {
     // 之後換成真的 API
-    // await updateUser(userId, { preferences, autofill: { dietType, selfDriving } })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -50,6 +56,10 @@ function ProfilePage() {
         <p style={{ margin: "0 0 8px" }}>
           <span style={{ color: "#666", marginRight: "8px" }}>帳號：</span>
           {MOCK_PROFILE.username}
+        </p>
+        <p style={{ margin: "0 0 8px" }}>
+          <span style={{ color: "#666", marginRight: "8px" }}>Email：</span>
+          {MOCK_PROFILE.email}
         </p>
         <p style={{ margin: "0 0 8px" }}>
           <span style={{ color: "#666", marginRight: "8px" }}>角色：</span>
@@ -76,15 +86,15 @@ function ProfilePage() {
           {CATEGORIES.map(category => (
             <span
               key={category}
-              onClick={() => togglePreference(category)}
+              onClick={() => toggleTag(category)}
               style={{
                 padding: "6px 16px",
                 borderRadius: "20px",
                 cursor: "pointer",
                 border: "1px solid",
-                borderColor: preferences.includes(category) ? "white" : "#666",
-                background: preferences.includes(category) ? "#333" : "transparent",
-                color: preferences.includes(category) ? "white" : "#666",
+                borderColor: tags.includes(category) ? "white" : "#666",
+                background: tags.includes(category) ? "#333" : "transparent",
+                color: tags.includes(category) ? "white" : "#666",
                 fontSize: "14px",
               }}
             >
@@ -106,11 +116,11 @@ function ProfilePage() {
               飲食需求
             </label>
             <select
-              value={dietType}
-              onChange={e => setDietType(e.target.value as any)}
+              value={dietType ?? ""}
+              onChange={e => setDietType(e.target.value as "veg" | "non-veg" | null)}
               style={{ padding: "8px", width: "200px" }}
             >
-              <option value="none">無需求</option>
+              <option value="">無需求</option>
               <option value="veg">素食</option>
               <option value="non-veg">葷食</option>
             </select>

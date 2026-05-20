@@ -10,7 +10,7 @@ function EventDetailPage() {
   const eligibility = MOCK_ELIGIBILITY
   const alreadyRegistered = MOCK_TRANSACTIONS.some(t => t.eventId === eventId)
 
-  const [dietType, setDietType] = useState<"veg" | "non-veg" | "none">("none")
+  const [dietType, setDietType] = useState<"veg" | "non-veg" | null>(null)
   const [selfDriving, setSelfDriving] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
   const [message, setMessage] = useState("")
@@ -19,7 +19,6 @@ function EventDetailPage() {
   async function handleRegister() {
     setRegistering(true)
     // 之後換成真的 API
-    // await createTransaction({ eventId, guestCount, dietType, selfDriving, saveAutofill: true })
     setTimeout(() => {
       setMessage("報名成功！（假資料）")
       setRegistering(false)
@@ -89,8 +88,11 @@ function EventDetailPage() {
         <h3>報名資料</h3>
         <div>
           <label>飲食需求：</label>
-          <select value={dietType} onChange={e => setDietType(e.target.value as any)}>
-            <option value="none">無需求</option>
+          <select
+            value={dietType ?? ""}
+            onChange={e => setDietType(e.target.value as "veg" | "non-veg" | null || null)}
+          >
+            <option value="">無需求</option>
             <option value="veg">素食</option>
             <option value="non-veg">葷食</option>
           </select>
