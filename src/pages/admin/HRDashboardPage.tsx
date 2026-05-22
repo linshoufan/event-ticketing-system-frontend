@@ -84,7 +84,6 @@ function HRDashboardPage() {
       <div className="flex flex-col gap-3">
         {filtered.map(stat => {
           const cap = stat.ticketLimit ?? stat.totalConfirmed
-          const checkinRate = stat.totalConfirmed > 0
             ? Math.round(stat.totalCheckedIn / stat.totalConfirmed * 100)
             : 0
 

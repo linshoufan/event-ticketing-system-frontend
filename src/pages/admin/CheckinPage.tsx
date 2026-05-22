@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { MOCK_EVENTS } from "../../mock/events"
 
 interface TicketRecord {
@@ -23,7 +23,6 @@ const STATUS_CONFIG = {
 
 function CheckinPage() {
   const { eventId } = useParams<{ eventId: string }>()
-  const navigate = useNavigate()
   const event = MOCK_EVENTS.find(e => e.eventId === eventId)
   const [tickets, setTickets] = useState<TicketRecord[]>(MOCK_CHECKIN_TICKETS)
   const [search, setSearch] = useState("")

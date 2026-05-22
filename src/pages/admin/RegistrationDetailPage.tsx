@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { MOCK_REGISTRATIONS } from "../../mock/transactions"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -15,7 +15,6 @@ function getDietLabel(diet: string | null) {
 
 function RegistrationDetailPage() {
   const { eventId: _ } = useParams<{ eventId: string }>()
-  const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState("")
 
   const { summary, registrations } = MOCK_REGISTRATIONS
