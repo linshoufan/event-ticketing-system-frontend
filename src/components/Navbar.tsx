@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { removeToken } from "../api/auth"
 
@@ -5,13 +6,17 @@ function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const role = localStorage.getItem("role")
+  const [leaving, setLeaving] = useState(false)
 
   if (!role) return null
 
   function handleLogout() {
-    removeToken()
-    localStorage.removeItem("role")
-    navigate("/")
+    setLeaving(true)
+    setTimeout(() => {
+      removeToken()
+      localStorage.removeItem("role")
+      navigate("/")
+    }, 400)
   }
 
   function isActive(path: string) {
@@ -29,7 +34,7 @@ function Navbar() {
     }`
 
   return (
-    <nav className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur border-b border-zinc-800">
+    <nav className={`sticky top-0 z-50 bg-zinc-950/80 backdrop-blur border-b border-zinc-800 transition-all duration-400 ${leaving ? "opacity-0 -translate-y-2" : "opacity-100 translate-y-0"}`}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
 
         <div className="flex items-center gap-3">
