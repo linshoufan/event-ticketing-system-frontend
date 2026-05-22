@@ -7,7 +7,7 @@ const MOCK_HR_STATS = [
     eventName: "夏日烤肉趴",
     ticketLimit: 50,
     totalConfirmed: 38,
-    totalWaitlist: 5,
+    totalWaitlist: 100,
     totalCancelled: 4,
     totalCheckedIn: 20,
   },
@@ -84,8 +84,28 @@ function HRDashboardPage() {
       <div className="flex flex-col gap-3">
         {filtered.map(stat => {
           const cap = stat.ticketLimit ?? stat.totalConfirmed
-            ? Math.round(stat.totalCheckedIn / stat.totalConfirmed * 100)
+
+          const waitlistColor = stat.ticketLimit && stat.totalWaitlist > stat.ticketLimit
+            ? "text-red-400"
+            : "text-amber-400"
+
+          const cancelRate = stat.totalConfirmed > 0
+            ? stat.totalCancelled / stat.totalConfirmed
             : 0
+          const cancelColor = cancelRate > 0.25
+            ? "text-red-400"
+            : cancelRate < 0.05
+            ? "text-emerald-400"
+            : "text-zinc-500"
+
+          const checkinRate = stat.totalConfirmed > 0
+            ? stat.totalCheckedIn / stat.totalConfirmed
+            : 0
+          const checkinColor = checkinRate >= 0.95
+            ? "text-emerald-400"
+            : checkinRate < 0.5
+            ? "text-red-400"
+            : "text-blue-400"
 
           return (
             <div key={stat.eventId} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
@@ -101,10 +121,16 @@ function HRDashboardPage() {
 
               <div className="grid grid-cols-4 gap-4 mb-4">
                 {[
-                  { label: "正取", value: stat.totalConfirmed, color: "text-emerald-400" },
-                  { label: "候補", value: stat.totalWaitlist, color: "text-amber-400" },
-                  { label: "取消", value: stat.totalCancelled, color: "text-zinc-500" },
-                  { label: "出席", value: stat.totalCheckedIn, color: "text-blue-400" },
+                  { 
+                    label: "正取", 
+                    value: stat.totalConfirmed, 
+                    color: cap > 0 && stat.totalConfirmed / cap < 0.5
+                      ? "text-red-400"
+                      : "text-emerald-400"
+                  },
+                  { label: "候補", value: stat.totalWaitlist,  color: waitlistColor },
+                  { label: "取消", value: stat.totalCancelled, color: cancelColor },
+                  { label: "出席", value: stat.totalCheckedIn, color: checkinColor },
                 ].map(item => (
                   <div key={item.label}>
                     <p className="text-zinc-500 text-xs mb-0.5">{item.label}</p>
@@ -126,7 +152,11 @@ function HRDashboardPage() {
                     <span>出席率</span>
                     <span>{stat.totalCheckedIn} / {stat.totalConfirmed} 人</span>
                   </div>
-                  <StatBar value={stat.totalCheckedIn} total={stat.totalConfirmed} color="bg-blue-500" />
+                  <StatBar
+                    value={stat.totalCheckedIn}
+                    total={stat.totalConfirmed}
+                    color={checkinRate >= 0.95 ? "bg-emerald-500" : checkinRate < 0.5 ? "bg-red-500" : "bg-blue-500"}
+                  />
                 </div>
               </div>
             </div>
