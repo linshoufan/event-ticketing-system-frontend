@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import PageTransition from "../../components/PageTransition"
 
 const MOCK_HR_STATS = [
   {
@@ -57,6 +58,7 @@ function HRDashboardPage() {
   const filtered = MOCK_HR_STATS.filter(s => s.eventName.includes(search))
 
   return (
+    <PageTransition>
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-6">統計報表</h1>
 
@@ -164,6 +166,7 @@ function HRDashboardPage() {
         })}
       </div>
     </div>
+    </PageTransition>
   )
 }
 

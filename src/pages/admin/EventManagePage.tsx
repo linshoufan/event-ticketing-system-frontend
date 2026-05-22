@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import type { Event } from "../../types"
 import { MOCK_EVENTS } from "../../mock/events"
+import PageTransition from "../../components/PageTransition"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   not_open:    { label: "尚未開始報名", color: "text-zinc-400",   bg: "bg-zinc-800" },
@@ -35,6 +36,7 @@ function EventManagePage() {
   }
 
   return (
+    <PageTransition>
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white">活動管理</h1>
@@ -121,6 +123,7 @@ function EventManagePage() {
         </div>
       )}
     </div>
+    </PageTransition>
   )
 }
 

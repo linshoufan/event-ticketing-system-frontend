@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { MOCK_EVENTS } from "../mock/events"
 import type { Event } from "../types"
 import EventCard from "../components/EventCard"
+import PageTransition from "../components/PageTransition"
 
 const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
@@ -31,6 +32,7 @@ function EventListPage() {
   })
 
   return (
+    <PageTransition>
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-6">活動列表</h1>
 
@@ -81,6 +83,7 @@ function EventListPage() {
         </div>
       )}
     </div>
+    </PageTransition>
   )
 }
 

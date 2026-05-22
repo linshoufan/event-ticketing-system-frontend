@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { MOCK_REGISTRATIONS } from "../../mock/transactions"
+import PageTransition from "../../components/PageTransition"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   confirmed: { label: "正取", color: "text-emerald-400", bg: "bg-emerald-900/30" },
@@ -25,6 +26,7 @@ function RegistrationDetailPage() {
   })
 
   return (
+    <PageTransition>
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-6">報名詳情</h1>
 
@@ -85,6 +87,7 @@ function RegistrationDetailPage() {
         )}
       </div>
     </div>
+    </PageTransition>
   )
 }
 

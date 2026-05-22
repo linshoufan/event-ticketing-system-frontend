@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { MOCK_EVENTS, MOCK_ELIGIBILITY } from "../mock/events"
 import { MOCK_TRANSACTIONS } from "../mock/transactions"
+import PageTransition from "../components/PageTransition"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   not_open:    { label: "尚未開始報名", color: "text-zinc-400", bg: "bg-zinc-800" },
@@ -80,6 +81,7 @@ function EventDetailPage() {
   const config = STATUS_CONFIG[event.status] ?? { label: event.status, color: "text-zinc-400", bg: "bg-zinc-800" }
 
   return (
+    <PageTransition>
     <div className="max-w-2xl mx-auto px-4 py-8">
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
@@ -182,6 +184,7 @@ function EventDetailPage() {
         </div>
       )}
     </div>
+    </PageTransition>
   )
 }
 

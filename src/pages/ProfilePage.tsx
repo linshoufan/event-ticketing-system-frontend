@@ -1,4 +1,5 @@
 import { useState } from "react"
+import PageTransition from "../components/PageTransition"
 
 const CATEGORIES = [
   { value: "sport",   label: "🏃 運動" },
@@ -57,6 +58,7 @@ function ProfilePage() {
   }
 
   return (
+    <PageTransition>
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-6">個人資料</h1>
 
@@ -149,6 +151,7 @@ function ProfilePage() {
         </button>
       </div>
     </div>
+    </PageTransition>
   )
 }
 

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { MOCK_TRANSACTIONS } from "../mock/transactions"
+import PageTransition from "../components/PageTransition"
 
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
@@ -26,6 +27,7 @@ function MyTransactionsPage() {
   })
 
   return (
+    <PageTransition>
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white">我的報名紀錄</h1>
@@ -110,6 +112,7 @@ function MyTransactionsPage() {
         </div>
       )}
     </div>
+    </PageTransition>
   )
 }
 

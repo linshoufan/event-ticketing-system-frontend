@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { MOCK_TICKETS } from "../mock/tickets"
 import type { TicketStatus } from "../types"
+import PageTransition from "../components/PageTransition"
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string }> = {
   unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30" },
@@ -43,6 +44,7 @@ function TicketDetailPage() {
   const config = STATUS_CONFIG[ticket.status]
 
   return (
+    <PageTransition>
     <div className="max-w-md mx-auto px-4 py-8">
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
 
@@ -116,6 +118,7 @@ function TicketDetailPage() {
         </div>
       </div>
     </div>
+    </PageTransition>
   )
 }
 

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { createEvent } from "../../api/events"
+import PageTransition from "../../components/PageTransition"
 
 const CATEGORIES = [
   { value: "sport", label: "運動" },
@@ -99,6 +100,7 @@ function CreateEventPage() {
   const labelClass = "text-zinc-400 text-sm block mb-2"
 
   return (
+    <PageTransition>
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-white mb-6">新增活動</h1>
 
@@ -260,6 +262,7 @@ function CreateEventPage() {
         </div>
       </div>
     </div>
+    </PageTransition>
   )
 }
 

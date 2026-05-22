@@ -1,26 +1,34 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { saveToken } from "../api/auth"
 
 function LoginPage() {
   const navigate = useNavigate()
+  const [leaving, setLeaving] = useState(false)
 
   function handleFakeLogin(role: string) {
+    setLeaving(true)
     saveToken(`fake-token-${role}`)
     localStorage.setItem("role", role)
 
-    if (role === "welfare_member") {
-      navigate("/admin/events")
-    } else if (role === "hr") {
-      navigate("/admin/hr")
-    } else {
-      navigate("/events")
-    }
+    setTimeout(() => {
+      if (role === "welfare_member") {
+        navigate("/admin/events")
+      } else if (role === "hr") {
+        navigate("/admin/hr")
+      } else {
+        navigate("/events")
+      }
+    }, 600)
   }
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-
+      <div
+        className={`w-full max-w-md transition-all duration-500 ${
+          leaving ? "opacity-0 translate-y-[-40px]" : "opacity-100 translate-y-0"
+        }`}
+      >
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-800 mb-6">
             <span className="text-3xl">🎫</span>

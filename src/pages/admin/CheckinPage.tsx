@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { MOCK_EVENTS } from "../../mock/events"
+import PageTransition from "../../components/PageTransition"
+
 
 interface TicketRecord {
   ticketId: string
@@ -46,6 +48,7 @@ function CheckinPage() {
   }
 
   return (
+    <PageTransition>
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">核銷</h1>
@@ -109,6 +112,7 @@ function CheckinPage() {
         )}
       </div>
     </div>
+    </PageTransition>
   )
 }
 
