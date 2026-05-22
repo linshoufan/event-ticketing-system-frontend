@@ -1,6 +1,14 @@
 import { useState } from "react"
 
-const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
+const CATEGORIES = [
+  { value: "sport",   label: "🏃 運動" },
+  { value: "food",    label: "🍽️ 美食" },
+  { value: "travel",  label: "✈️ 旅遊" },
+  { value: "culture", label: "🎨 文藝" },
+  { value: "family",  label: "👨‍👩‍👧 親子" },
+  { value: "contest", label: "🏆 競賽" },
+  { value: "music",   label: "🎵 音樂" },
+]
 
 const MOCK_PROFILE = {
   username: "john.doe",
@@ -38,125 +46,107 @@ function ProfilePage() {
   }
 
   async function handleSave() {
-    // 之後換成真的 API
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
+  function getRoleLabel(r: string | null) {
+    if (r === "welfare_member") return "福委會"
+    if (r === "hr") return "HR"
+    return "一般員工"
+  }
+
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px" }}>
-      <h1>個人資料</h1>
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-white mb-6">個人資料</h1>
 
-      <div style={{
-        padding: "16px",
-        border: "1px solid #eee",
-        borderRadius: "8px",
-        marginBottom: "24px",
-      }}>
-        <p style={{ margin: "0 0 8px" }}>
-          <span style={{ color: "#666", marginRight: "8px" }}>帳號：</span>
-          {MOCK_PROFILE.username}
-        </p>
-        <p style={{ margin: "0 0 8px" }}>
-          <span style={{ color: "#666", marginRight: "8px" }}>Email：</span>
-          {MOCK_PROFILE.email}
-        </p>
-        <p style={{ margin: "0 0 8px" }}>
-          <span style={{ color: "#666", marginRight: "8px" }}>角色：</span>
-          {role === "welfare_member" ? "福委會" : role === "hr" ? "HR" : "一般員工"}
-        </p>
-        <p style={{ margin: 0 }}>
-          <span style={{ color: "#666", marginRight: "8px" }}>報名狀態：</span>
-          {MOCK_PROFILE.registrationStatus === "active" ? (
-            <span style={{ color: "green" }}>正常</span>
-          ) : (
-            <span style={{ color: "red" }}>
-              鎖定中（解鎖時間：{new Date(MOCK_PROFILE.unlockAt!).toLocaleDateString("zh-TW")}）
-            </span>
-          )}
-        </p>
-      </div>
+      <div className="flex flex-col gap-4">
 
-      <div style={{ marginBottom: "24px" }}>
-        <h3 style={{ marginBottom: "12px" }}>活動偏好</h3>
-        <p style={{ color: "#666", fontSize: "14px", marginBottom: "12px" }}>
-          選擇你有興趣的活動類別，系統會優先推薦相關活動
-        </p>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {CATEGORIES.map(category => (
-            <span
-              key={category}
-              onClick={() => toggleTag(category)}
-              style={{
-                padding: "6px 16px",
-                borderRadius: "20px",
-                cursor: "pointer",
-                border: "1px solid",
-                borderColor: tags.includes(category) ? "white" : "#666",
-                background: tags.includes(category) ? "#333" : "transparent",
-                color: tags.includes(category) ? "white" : "#666",
-                fontSize: "14px",
-              }}
-            >
-              {category}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "32px" }}>
-        <h3 style={{ marginBottom: "12px" }}>報名自動填入</h3>
-        <p style={{ color: "#666", fontSize: "14px", marginBottom: "16px" }}>
-          報名活動時自動帶入以下資料
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div>
-            <label style={{ display: "block", marginBottom: "6px", color: "#666", fontSize: "14px" }}>
-              飲食需求
-            </label>
-            <select
-              value={dietType ?? ""}
-              onChange={e => setDietType(e.target.value as "veg" | "non-veg" | null)}
-              style={{ padding: "8px", width: "200px" }}
-            >
-              <option value="">無需求</option>
-              <option value="veg">素食</option>
-              <option value="non-veg">葷食</option>
-            </select>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-zinc-800 flex items-center justify-center text-2xl">
+              👤
+            </div>
+            <div>
+              <p className="text-white font-semibold">{MOCK_PROFILE.username}</p>
+              <p className="text-zinc-400 text-sm">{MOCK_PROFILE.email}</p>
+            </div>
           </div>
+          <div className="flex items-center justify-between py-3 border-t border-zinc-800">
+            <span className="text-zinc-500 text-sm">角色</span>
+            <span className="text-white text-sm">{getRoleLabel(role)}</span>
+          </div>
+          <div className="flex items-center justify-between py-3 border-t border-zinc-800">
+            <span className="text-zinc-500 text-sm">報名狀態</span>
+            {MOCK_PROFILE.registrationStatus === "active" ? (
+              <span className="text-xs font-medium px-3 py-1 rounded-full bg-emerald-900/30 text-emerald-400">正常</span>
+            ) : (
+              <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-900/30 text-red-400">
+                鎖定中（{new Date(MOCK_PROFILE.unlockAt!).toLocaleDateString("zh-TW")} 解鎖）
+              </span>
+            )}
+          </div>
+        </div>
 
-          <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={selfDriving}
-                onChange={e => setSelfDriving(e.target.checked)}
-              />
-              <span>自行開車</span>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <h3 className="text-white font-semibold mb-1">活動偏好</h3>
+          <p className="text-zinc-500 text-sm mb-4">選擇你有興趣的活動類別</p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(cat => {
+              const isSelected = tags.includes(cat.value)
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => toggleTag(cat.value)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    isSelected
+                      ? "bg-white text-zinc-900"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <h3 className="text-white font-semibold mb-1">報名自動填入</h3>
+          <p className="text-zinc-500 text-sm mb-4">報名活動時自動帶入以下資料</p>
+
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-zinc-400 text-sm block mb-2">飲食需求</label>
+              <select
+                value={dietType ?? ""}
+                onChange={e => setDietType(e.target.value as "veg" | "non-veg" | null || null)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-zinc-500"
+              >
+                <option value="">無需求</option>
+                <option value="veg">素食</option>
+                <option value="non-veg">葷食</option>
+              </select>
+            </div>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div
+                onClick={() => setSelfDriving(!selfDriving)}
+                className={`w-10 h-6 rounded-full transition-colors relative ${selfDriving ? "bg-emerald-500" : "bg-zinc-700"}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${selfDriving ? "left-5" : "left-1"}`} />
+              </div>
+              <span className="text-zinc-300 text-sm">自行開車</span>
             </label>
           </div>
         </div>
-      </div>
 
-      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
         <button
           onClick={handleSave}
-          style={{
-            padding: "10px 24px",
-            background: "black",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
+          className="w-full py-3 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 font-semibold transition-colors"
         >
-          儲存
+          {saved ? "✓ 已儲存" : "儲存"}
         </button>
-        {saved && (
-          <span style={{ color: "green" }}>已儲存！</span>
-        )}
       </div>
     </div>
   )

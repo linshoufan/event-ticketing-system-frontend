@@ -6,6 +6,16 @@ import EventCard from "../components/EventCard"
 
 const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
+const CATEGORY_LABELS: Record<string, string> = {
+  sport: "運動",
+  food: "美食",
+  travel: "旅遊",
+  culture: "文藝",
+  family: "親子",
+  contest: "競賽",
+  music: "音樂",
+}
+
 function EventListPage() {
   const navigate = useNavigate()
   const [events] = useState<Event[]>(MOCK_EVENTS)
@@ -21,30 +31,30 @@ function EventListPage() {
   })
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
-      <h1>活動列表</h1>
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-white mb-6">活動列表</h1>
 
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           placeholder="搜尋活動..."
           value={keyword}
           onChange={e => setKeyword(e.target.value)}
-          style={{ flex: 1, padding: "8px" }}
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
         />
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
-          style={{ padding: "8px" }}
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-600"
         >
           <option value="">所有類別</option>
           {CATEGORIES.map(c => (
-            <option key={c} value={c}>{c}</option>
+            <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
           ))}
         </select>
         <select
           value={status}
           onChange={e => setStatus(e.target.value)}
-          style={{ padding: "8px" }}
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-600"
         >
           <option value="">所有狀態</option>
           <option value="not_open">尚未開始報名</option>
@@ -55,9 +65,12 @@ function EventListPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p>沒有活動</p>
+        <div className="text-center py-16 text-zinc-500">
+          <p className="text-4xl mb-3">🔍</p>
+          <p>沒有符合的活動</p>
+        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="flex flex-col gap-3">
           {filtered.map(event => (
             <EventCard
               key={event.eventId}

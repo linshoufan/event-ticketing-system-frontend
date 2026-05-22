@@ -18,121 +18,63 @@ function Navbar() {
     return location.pathname.startsWith(path)
   }
 
-  const linkStyle = (path: string) => ({
-    cursor: "pointer",
-    padding: "8px 12px",
-    borderRadius: "4px",
-    background: isActive(path) ? "#333" : "transparent",
-    color: "white",
-    textDecoration: "none",
-  })
-
   const mainPages = ["/events", "/admin/events", "/admin/hr", "/my-transactions", "/my-tickets", "/profile", "/admin/users"]
   const isMainPage = mainPages.some(p => location.pathname === p)
 
+  const linkClass = (path: string) =>
+    `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+      isActive(path)
+        ? "bg-zinc-700 text-white"
+        : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+    }`
+
   return (
-    <nav style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "12px 24px",
-      background: "#111",
-      color: "white",
-      position: "sticky",
-      top: 0,
-      zIndex: 100,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        {!isMainPage && (
-          <span
-            onClick={() => window.history.back()}
-            style={{ cursor: "pointer", color: "#aaa", fontSize: "14px" }}
-          >
-            ← 返回
+    <nav className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur border-b border-zinc-800">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+
+        <div className="flex items-center gap-3">
+          {!isMainPage && (
+            <button
+              onClick={() => window.history.back()}
+              className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors flex items-center justify-center text-sm"
+            >
+              ←
+            </button>
+          )}
+          <span className="text-white font-semibold text-sm">
+            企業活動訂票系統
           </span>
-        )}
-        <span style={{ fontWeight: "bold", fontSize: "16px" }}>
-          企業活動訂票系統
-        </span>
-      </div>
+        </div>
 
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {role === "employee" && (
-          <>
-            <span
-              style={linkStyle("/events")}
-              onClick={() => navigate("/events")}
-            >
-              活動列表
-            </span>
-            <span
-              style={linkStyle("/my-transactions")}
-              onClick={() => navigate("/my-transactions")}
-            >
-              我的報名紀錄
-            </span>
-            <span
-              style={linkStyle("/my-tickets")}
-              onClick={() => navigate("/my-tickets")}
-            >
-              我的票券
-            </span>
-          </>
-        )}
+        <div className="flex items-center gap-1">
+          {role === "employee" && (
+            <>
+              <span className={linkClass("/events")} onClick={() => navigate("/events")}>活動列表</span>
+              <span className={linkClass("/my-transactions")} onClick={() => navigate("/my-transactions")}>我的報名</span>
+              <span className={linkClass("/my-tickets")} onClick={() => navigate("/my-tickets")}>我的票券</span>
+            </>
+          )}
+          {role === "welfare_member" && (
+            <>
+              <span className={linkClass("/admin/events")} onClick={() => navigate("/admin/events")}>活動管理</span>
+              <span className={linkClass("/admin/users")} onClick={() => navigate("/admin/users")}>使用者管理</span>
+            </>
+          )}
+          {role === "hr" && (
+            <>
+              <span className={linkClass("/events")} onClick={() => navigate("/events")}>活動列表</span>
+              <span className={linkClass("/admin/hr")} onClick={() => navigate("/admin/hr")}>統計報表</span>
+            </>
+          )}
+          <span className={linkClass("/profile")} onClick={() => navigate("/profile")}>個人資料</span>
 
-        {role === "welfare_member" && (
-          <>
-            <span
-              style={linkStyle("/admin/events")}
-              onClick={() => navigate("/admin/events")}
-            >
-              活動管理
-            </span>
-            <span
-              style={linkStyle("/admin/users")}
-              onClick={() => navigate("/admin/users")}
-            >
-              使用者管理
-            </span>
-          </>
-        )}
-
-        {role === "hr" && (
-          <>
-            <span
-              style={linkStyle("/events")}
-              onClick={() => navigate("/events")}
-            >
-              活動列表
-            </span>
-            <span
-              style={linkStyle("/admin/hr")}
-              onClick={() => navigate("/admin/hr")}
-            >
-              統計報表
-            </span>
-          </>
-        )}
-        <span
-          style={linkStyle("/profile")}
-          onClick={() => navigate("/profile")}
-        >
-          個人資料
-        </span>
-        <button
-          onClick={handleLogout}
-          style={{
-            marginLeft: "16px",
-            padding: "6px 14px",
-            cursor: "pointer",
-            background: "transparent",
-            color: "white",
-            border: "1px solid white",
-            borderRadius: "4px",
-          }}
-        >
-          登出
-        </button>
+          <button
+            onClick={handleLogout}
+            className="ml-2 px-3 py-1.5 rounded-lg text-sm font-medium text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 transition-colors"
+          >
+            登出
+          </button>
+        </div>
       </div>
     </nav>
   )

@@ -4,6 +4,18 @@ import { MOCK_TRANSACTIONS } from "../mock/transactions"
 
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
+const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; bg: string; dot: string }> = {
+  confirmed: { label: "正取",   color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
+  waitlist:  { label: "候補",   color: "text-amber-400",   bg: "bg-amber-900/30",   dot: "bg-amber-400" },
+  cancelled: { label: "已取消", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-600" },
+}
+
+function getDietLabel(diet: string | null) {
+  if (!diet) return "無需求"
+  const map: Record<string, string> = { veg: "素食", "non-veg": "葷食" }
+  return map[diet] ?? diet
+}
+
 function MyTransactionsPage() {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | "">("")
@@ -13,42 +25,14 @@ function MyTransactionsPage() {
     return true
   })
 
-  function getStatusLabel(status: TransactionStatus) {
-    const map: Record<TransactionStatus, string> = {
-      confirmed: "正取",
-      waitlist: "候補",
-      cancelled: "已取消",
-    }
-    return map[status]
-  }
-
-  function getStatusColor(status: TransactionStatus) {
-    const map: Record<TransactionStatus, string> = {
-      confirmed: "green",
-      waitlist: "orange",
-      cancelled: "gray",
-    }
-    return map[status]
-  }
-
-  function getDietLabel(diet: string | null) {
-    if (!diet) return "無需求"
-    const map: Record<string, string> = {
-      veg: "素食",
-      "non-veg": "葷食",
-    }
-    return map[diet] ?? diet
-  }
-
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
-      <h1>我的報名紀錄</h1>
-
-      <div style={{ marginBottom: "24px" }}>
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-white">我的報名紀錄</h1>
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value as TransactionStatus | "")}
-          style={{ padding: "8px" }}
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-600"
         >
           <option value="">所有狀態</option>
           <option value="confirmed">正取</option>
@@ -58,62 +42,71 @@ function MyTransactionsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p>沒有報名紀錄</p>
+        <div className="text-center py-16 text-zinc-500">
+          <p className="text-4xl mb-3">📋</p>
+          <p>沒有報名紀錄</p>
+        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {filtered.map(t => (
-            <div
-              key={t.transactionId}
-              style={{
-                padding: "16px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                opacity: t.status === "cancelled" ? 0.4 : 1,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ margin: 0 }}>{t.eventName}</h2>
-                <span style={{ color: getStatusColor(t.status as TransactionStatus) }}>
-                  {getStatusLabel(t.status as TransactionStatus)}
-                  {t.status === "waitlist" && t.waitlistNumber && (
-                    <span style={{ fontSize: "14px", marginLeft: "4px" }}>
-                      （第 {t.waitlistNumber} 號）
+        <div className="flex flex-col gap-3">
+          {filtered.map(t => {
+            const config = STATUS_CONFIG[t.status as TransactionStatus]
+            return (
+              <div
+                key={t.transactionId}
+                className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-5 transition-all ${t.status === "cancelled" ? "opacity-50" : ""}`}
+              >
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
+                    <h2 className="text-white font-semibold">{t.eventName}</h2>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <span className={`text-xs font-medium px-3 py-1 rounded-full ${config.bg} ${config.color}`}>
+                      {config.label}
+                      {t.status === "waitlist" && t.waitlistNumber && (
+                        <span className="ml-1">（第 {t.waitlistNumber} 號）</span>
+                      )}
                     </span>
-                  )}
-                </span>
+                  </div>
+                </div>
+
+                <p className="text-zinc-400 text-sm flex items-center gap-1 mb-3">
+                  <span>🕐</span>
+                  {new Date(t.eventStartTime).toLocaleString("zh-TW")}
+                </p>
+
+                <div className="flex gap-4 text-sm text-zinc-500 mb-4">
+                  <span>飲食：{getDietLabel(t.dietType as string | null)}</span>
+                  <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
+                  {t.guestCount > 0 && <span>家屬：{t.guestCount} 人</span>}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-600 text-xs">
+                    報名於 {new Date(t.registeredAt).toLocaleString("zh-TW")}
+                  </span>
+                  <div className="flex gap-2">
+                    {t.ticketId && (
+                      <button
+                        onClick={() => navigate(`/my-tickets/${t.ticketId}`)}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                      >
+                        查看票券
+                      </button>
+                    )}
+                    {t.status === "confirmed" && (
+                      <button
+                        onClick={() => alert("取消報名（之後換成真的 API）")}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/50 text-red-400 transition-colors"
+                      >
+                        取消報名
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-
-              <p style={{ margin: "8px 0 0", color: "#666" }}>
-                {new Date(t.eventStartTime).toLocaleString("zh-TW")}
-              </p>
-
-              <div style={{ display: "flex", gap: "16px", margin: "8px 0 0", fontSize: "14px", color: "#666" }}>
-                <span>飲食：{getDietLabel(t.dietType as string | null)}</span>
-                <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
-                {t.guestCount > 0 && <span>家屬人數：{t.guestCount}</span>}
-              </div>
-
-              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
-                {t.ticketId && (
-                  <button onClick={() => navigate(`/my-tickets/${t.ticketId}`)}>
-                    查看票券
-                  </button>
-                )}
-                {t.status === "confirmed" && (
-                  <button
-                    style={{ color: "red" }}
-                    onClick={() => alert("取消報名（之後換成真的 API）")}
-                  >
-                    取消報名
-                  </button>
-                )}
-              </div>
-
-              <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#999" }}>
-                報名時間：{new Date(t.registeredAt).toLocaleString("zh-TW")}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

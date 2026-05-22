@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom"
 import { MOCK_TICKETS } from "../mock/tickets"
 import type { Ticket, TicketStatus } from "../types"
 
+const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string; dot: string }> = {
+  unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
+  used:    { label: "已報到", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-500" },
+  invalid: { label: "未開放", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-600" },
+}
+
 function MyTicketsPage() {
   const navigate = useNavigate()
   const [filter, setFilter] = useState<TicketStatus | "">("")
@@ -12,33 +18,14 @@ function MyTicketsPage() {
     return true
   })
 
-  function getStatusLabel(status: TicketStatus) {
-    const map: Record<TicketStatus, string> = {
-      unused: "可報到",
-      used: "已報到",
-      invalid: "未開放",
-    }
-    return map[status]
-  }
-
-  function getStatusColor(status: TicketStatus) {
-    const map: Record<TicketStatus, string> = {
-      unused: "green",
-      used: "gray",
-      invalid: "gray",
-    }
-    return map[status]
-  }
-
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "24px" }}>
-      <h1>我的票券</h1>
-
-      <div style={{ marginBottom: "24px" }}>
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-white">我的票券</h1>
         <select
           value={filter}
           onChange={e => setFilter(e.target.value as TicketStatus | "")}
-          style={{ padding: "8px" }}
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-600"
         >
           <option value="">所有票券</option>
           <option value="unused">可報到</option>
@@ -48,38 +35,49 @@ function MyTicketsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p>沒有票券</p>
+        <div className="text-center py-16 text-zinc-500">
+          <p className="text-4xl mb-3">🎫</p>
+          <p>沒有票券</p>
+        </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {filtered.map((ticket: Ticket) => (
-            <div
-              key={ticket.ticketId}
-              onClick={() => navigate(`/my-tickets/${ticket.ticketId}`)}
-              style={{
-                padding: "16px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                cursor: "pointer",
-                opacity: ticket.status === "unused" ? 1 : 0.4,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <h2 style={{ margin: 0 }}>{ticket.eventName}</h2>
-                <span style={{ color: getStatusColor(ticket.status) }}>
-                  {getStatusLabel(ticket.status)}
-                </span>
+        <div className="flex flex-col gap-3">
+          {filtered.map((ticket: Ticket) => {
+            const config = STATUS_CONFIG[ticket.status]
+            return (
+              <div
+                key={ticket.ticketId}
+                onClick={() => navigate(`/my-tickets/${ticket.ticketId}`)}
+                className={`
+                  bg-zinc-900 border border-zinc-800 rounded-2xl p-5 cursor-pointer
+                  transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-800/80
+                  ${ticket.status !== "unused" ? "opacity-50" : ""}
+                `}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-2 h-2 rounded-full ${config.dot}`} />
+                      <h2 className="text-white font-semibold truncate">{ticket.eventName}</h2>
+                    </div>
+                    <p className="text-zinc-400 text-sm flex items-center gap-1 mt-1">
+                      <span>📍</span>{ticket.eventLocation}
+                    </p>
+                    <p className="text-zinc-500 text-sm flex items-center gap-1 mt-1">
+                      <span>🕐</span>{new Date(ticket.eventStartTime).toLocaleString("zh-TW")}
+                    </p>
+                    {ticket.checkinAvailable && (
+                      <p className="text-emerald-400 text-sm font-medium mt-3 flex items-center gap-1">
+                        <span>👆</span> 點擊進入報到
+                      </p>
+                    )}
+                  </div>
+                  <span className={`text-xs font-medium px-3 py-1 rounded-full flex-shrink-0 ${config.bg} ${config.color}`}>
+                    {config.label}
+                  </span>
+                </div>
               </div>
-              <p style={{ margin: "8px 0 0" }}>{ticket.eventLocation}</p>
-              <p style={{ margin: "4px 0 0", color: "#666" }}>
-                {new Date(ticket.eventStartTime).toLocaleString("zh-TW")}
-              </p>
-              {ticket.checkinAvailable && (
-                <p style={{ margin: "8px 0 0", color: "green", fontWeight: "bold" }}>
-                  點擊進入報到
-                </p>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
