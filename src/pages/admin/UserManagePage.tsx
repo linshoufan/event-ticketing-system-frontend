@@ -12,11 +12,6 @@ interface User {
   unlockAt: string | null
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  welfare_member: "福委會",
-  employee: "一般員工",
-  hr: "HR",
-}
 
 function UserManagePage() {
   const navigate = useNavigate()

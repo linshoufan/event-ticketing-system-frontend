@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { MOCK_TICKETS } from "../mock/tickets"
 import type { TicketStatus } from "../types"
 
@@ -11,7 +11,6 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: st
 
 function TicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>()
-  const navigate = useNavigate()
   const [ticket, setTicket] = useState(
     MOCK_TICKETS.find(t => t.ticketId === ticketId) ?? null
   )

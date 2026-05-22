@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { MOCK_EVENTS, MOCK_ELIGIBILITY } from "../mock/events"
 import { MOCK_TRANSACTIONS } from "../mock/transactions"
 
@@ -13,7 +13,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
-  const navigate = useNavigate()
   const event = MOCK_EVENTS.find(e => e.eventId === eventId) ?? null
   const eligibility = MOCK_ELIGIBILITY
   const alreadyRegistered = MOCK_TRANSACTIONS.some(t => t.eventId === eventId)
