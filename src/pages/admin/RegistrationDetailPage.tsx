@@ -2,6 +2,17 @@ import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { MOCK_REGISTRATIONS } from "../../mock/transactions"
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  confirmed: { label: "正取", color: "text-emerald-400", bg: "bg-emerald-900/30" },
+  waitlist:  { label: "候補", color: "text-amber-400",   bg: "bg-amber-900/30" },
+  cancelled: { label: "取消", color: "text-zinc-500",    bg: "bg-zinc-800" },
+}
+
+function getDietLabel(diet: string | null) {
+  if (!diet) return "無需求"
+  return diet === "veg" ? "素食" : "葷食"
+}
+
 function RegistrationDetailPage() {
   const { eventId: _ } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
@@ -14,104 +25,66 @@ function RegistrationDetailPage() {
     return true
   })
 
-  function getStatusLabel(status: string) {
-    const map: Record<string, string> = {
-      confirmed: "正取",
-      waitlist: "候補",
-      cancelled: "已取消",
-    }
-    return map[status] ?? status
-  }
-
-  function getStatusColor(status: string) {
-    const map: Record<string, string> = {
-      confirmed: "green",
-      waitlist: "orange",
-      cancelled: "gray",
-    }
-    return map[status] ?? "black"
-  }
-
-  function getDietLabel(diet: string | null) {
-    if (!diet) return "無需求"
-    const map: Record<string, string> = {
-      veg: "素食",
-      "non-veg": "葷食",
-    }
-    return map[diet] ?? diet
-  }
-
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
-      <button onClick={() => navigate("/admin/events")}>← 返回活動管理</button>
-      <h1 style={{ marginTop: "16px" }}>報名詳情</h1>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-white mb-6">報名詳情</h1>
 
-      <div style={{ display: "flex", gap: "16px", margin: "16px 0 24px" }}>
+      <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: "正取", value: summary.totalConfirmed, color: "green" },
-          { label: "候補", value: summary.totalWaitlist, color: "orange" },
-          { label: "已取消", value: summary.totalCancelled, color: "gray" },
+          { label: "正取", value: summary.totalConfirmed, color: "text-emerald-400" },
+          { label: "候補", value: summary.totalWaitlist,  color: "text-amber-400" },
+          { label: "已取消", value: summary.totalCancelled, color: "text-zinc-500" },
         ].map(item => (
-          <div key={item.label} style={{
-            flex: 1,
-            padding: "16px",
-            border: "1px solid #eee",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}>
-            <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>{item.label}</p>
-            <p style={{ margin: "4px 0 0", fontSize: "28px", fontWeight: "bold", color: item.color }}>
-              {item.value}
-            </p>
+          <div key={item.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
+            <p className="text-zinc-500 text-xs mb-1">{item.label}</p>
+            <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
           </div>
         ))}
       </div>
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="flex items-center justify-between mb-4">
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          style={{ padding: "8px" }}
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-600"
         >
           <option value="">所有狀態</option>
           <option value="confirmed">正取</option>
           <option value="waitlist">候補</option>
           <option value="cancelled">已取消</option>
         </select>
+        <span className="text-zinc-500 text-sm">{filtered.length} 筆</span>
       </div>
 
-      {filtered.length === 0 ? (
-        <p>沒有報名紀錄</p>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #ccc" }}>
-              <th style={{ textAlign: "left", padding: "8px" }}>姓名</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>狀態</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>家屬人數</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>飲食需求</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>自行開車</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>報名時間</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(reg => (
-              <tr key={reg.transactionId} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "8px" }}>{reg.username}</td>
-                <td style={{ padding: "8px", color: getStatusColor(reg.status) }}>
-                  {getStatusLabel(reg.status)}
-                </td>
-                <td style={{ padding: "8px" }}>{reg.guestCount}</td>
-                <td style={{ padding: "8px" }}>{getDietLabel(reg.dietType)}</td>
-                <td style={{ padding: "8px" }}>{reg.selfDriving ? "是" : "否"}</td>
-                <td style={{ padding: "8px" }}>
-                  {new Date(reg.registeredAt).toLocaleString("zh-TW")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500">沒有報名紀錄</div>
+        ) : (
+          <div className="divide-y divide-zinc-800">
+            {filtered.map(reg => {
+              const config = STATUS_CONFIG[reg.status] ?? STATUS_CONFIG.cancelled
+              return (
+                <div key={reg.transactionId} className="flex items-center gap-4 px-5 py-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium">{reg.username}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+                      <span>{getDietLabel(reg.dietType)}</span>
+                      <span>開車：{reg.selfDriving ? "是" : "否"}</span>
+                      {reg.guestCount > 0 && <span>家屬 {reg.guestCount} 人</span>}
+                    </div>
+                  </div>
+                  <span className={`text-xs font-medium px-3 py-1 rounded-full flex-shrink-0 ${config.bg} ${config.color}`}>
+                    {config.label}
+                  </span>
+                  <span className="text-zinc-600 text-xs flex-shrink-0">
+                    {new Date(reg.registeredAt).toLocaleDateString("zh-TW")}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

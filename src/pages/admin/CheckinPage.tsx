@@ -15,6 +15,12 @@ const MOCK_CHECKIN_TICKETS: TicketRecord[] = [
   { ticketId: "tk_003", userId: "u_locked01", username: "bob.wang", status: "unused" },
 ]
 
+const STATUS_CONFIG = {
+  unused: { label: "未核銷", color: "text-emerald-400", bg: "bg-emerald-900/30" },
+  used:   { label: "已核銷", color: "text-zinc-500",    bg: "bg-zinc-800" },
+  invalid:{ label: "無效",   color: "text-red-400",     bg: "bg-red-900/30" },
+}
+
 function CheckinPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
@@ -35,58 +41,27 @@ function CheckinPage() {
 
   function handleCheckin(ticketId: string) {
     if (!confirm("確定要核銷這張票券嗎？")) return
-    // 之後換成真的 API
     setTickets(prev =>
-      prev.map(t =>
-        t.ticketId === ticketId ? { ...t, status: "used" } : t
-      )
+      prev.map(t => t.ticketId === ticketId ? { ...t, status: "used" } : t)
     )
   }
 
-  function getStatusLabel(status: string) {
-    const map: Record<string, string> = {
-      used: "已核銷",
-      unused: "未核銷",
-      invalid: "無效",
-    }
-    return map[status] ?? status
-  }
-
-  function getStatusColor(status: string) {
-    const map: Record<string, string> = {
-      used: "gray",
-      unused: "green",
-      invalid: "red",
-    }
-    return map[status] ?? "black"
-  }
-
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
-      <button onClick={() => navigate("/admin/events")}>← 返回活動管理</button>
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">核銷</h1>
+        {event && <p className="text-zinc-400 text-sm mt-1">{event.name}</p>}
+      </div>
 
-      <h1 style={{ marginTop: "16px" }}>
-        核銷頁面
-        {event && <span style={{ fontSize: "18px", marginLeft: "12px", color: "#666" }}>— {event.name}</span>}
-      </h1>
-
-      <div style={{ display: "flex", gap: "16px", margin: "16px 0 24px" }}>
+      <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: "已核銷", value: summary.used, color: "gray" },
-          { label: "未核銷", value: summary.unused, color: "green" },
-          { label: "無效", value: summary.invalid, color: "red" },
+          { label: "已核銷", value: summary.used, color: "text-zinc-400" },
+          { label: "未核銷", value: summary.unused, color: "text-emerald-400" },
+          { label: "無效", value: summary.invalid, color: "text-red-400" },
         ].map(item => (
-          <div key={item.label} style={{
-            flex: 1,
-            padding: "16px",
-            border: "1px solid #eee",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}>
-            <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>{item.label}</p>
-            <p style={{ margin: "4px 0 0", fontSize: "28px", fontWeight: "bold", color: item.color }}>
-              {item.value}
-            </p>
+          <div key={item.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
+            <p className="text-zinc-500 text-xs mb-1">{item.label}</p>
+            <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
           </div>
         ))}
       </div>
@@ -95,55 +70,45 @@ function CheckinPage() {
         placeholder="搜尋姓名或票券 ID..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", padding: "8px", marginBottom: "16px", boxSizing: "border-box" }}
+        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600 mb-4"
       />
 
-      {filtered.length === 0 ? (
-        <p>找不到票券</p>
-      ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #ccc" }}>
-              <th style={{ textAlign: "left", padding: "8px" }}>票券 ID</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>姓名</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>狀態</th>
-              <th style={{ textAlign: "left", padding: "8px" }}>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(ticket => (
-              <tr key={ticket.ticketId} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "8px", fontFamily: "monospace" }}>{ticket.ticketId}</td>
-                <td style={{ padding: "8px" }}>{ticket.username}</td>
-                <td style={{ padding: "8px", color: getStatusColor(ticket.status) }}>
-                  {getStatusLabel(ticket.status)}
-                </td>
-                <td style={{ padding: "8px" }}>
-                  {ticket.status === "unused" ? (
-                    <button
-                      onClick={() => handleCheckin(ticket.ticketId)}
-                      style={{
-                        background: "black",
-                        color: "white",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      核銷
-                    </button>
-                  ) : (
-                    <span style={{ color: "#999", fontSize: "14px" }}>
-                      {ticket.status === "used" ? "已完成" : "不可核銷"}
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500">找不到票券</div>
+        ) : (
+          <div className="divide-y divide-zinc-800">
+            {filtered.map(ticket => {
+              const config = STATUS_CONFIG[ticket.status]
+              return (
+                <div key={ticket.ticketId} className="flex items-center gap-4 px-5 py-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium">{ticket.username}</p>
+                    <p className="text-zinc-500 text-xs font-mono mt-0.5">{ticket.ticketId}</p>
+                  </div>
+                  <span className={`text-xs font-medium px-3 py-1 rounded-full ${config.bg} ${config.color}`}>
+                    {config.label}
+                  </span>
+                  <div className="w-16 text-right">
+                    {ticket.status === "unused" ? (
+                      <button
+                        onClick={() => handleCheckin(ticket.ticketId)}
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-semibold transition-colors"
+                      >
+                        核銷
+                      </button>
+                    ) : (
+                      <span className="text-zinc-600 text-xs">
+                        {ticket.status === "used" ? "完成" : "無效"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

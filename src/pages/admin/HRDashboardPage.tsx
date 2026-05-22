@@ -31,34 +31,14 @@ const MOCK_HR_STATS = [
   },
 ]
 
-function StatBar({
-  value,
-  total,
-  color,
-}: {
-  value: number
-  total: number
-  color: string
-}) {
-  const pct = total > 0 ? Math.round((value / total) * 100) : 0
+function StatBar({ value, total, color }: { value: number; total: number; color: string }) {
+  const pct = total > 0 ? Math.min(Math.round((value / total) * 100), 100) : 0
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <div style={{
-        flex: 1,
-        height: "8px",
-        background: "#eee",
-        borderRadius: "4px",
-        overflow: "hidden",
-      }}>
-        <div style={{
-          width: `${pct}%`,
-          height: "100%",
-          background: color,
-          borderRadius: "4px",
-          transition: "width 0.3s",
-        }} />
+    <div className="flex items-center gap-3">
+      <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span style={{ fontSize: "13px", minWidth: "40px", color: "#666" }}>{pct}%</span>
+      <span className="text-xs text-zinc-500 w-8 text-right">{pct}%</span>
     </div>
   )
 }
@@ -70,43 +50,26 @@ function HRDashboardPage() {
   const totalEvents = MOCK_HR_STATS.length
   const totalConfirmed = MOCK_HR_STATS.reduce((sum, s) => sum + s.totalConfirmed, 0)
   const totalCheckedIn = MOCK_HR_STATS.reduce((sum, s) => sum + s.totalCheckedIn, 0)
-  const avgRegistrationRate = Math.round(
-    MOCK_HR_STATS.reduce((sum, s) => {
-      const cap = s.ticketLimit ?? s.totalConfirmed
-      return sum + (cap > 0 ? s.totalConfirmed / cap : 0)
-    }, 0) / totalEvents * 100
-  )
-  const avgCheckinRate = Math.round(
-    totalConfirmed > 0 ? (totalCheckedIn / totalConfirmed) * 100 : 0
-  )
+  const avgCheckinRate = totalConfirmed > 0
+    ? Math.round((totalCheckedIn / totalConfirmed) * 100)
+    : 0
 
-  const filtered = MOCK_HR_STATS.filter(s =>
-    s.eventName.includes(search)
-  )
+  const filtered = MOCK_HR_STATS.filter(s => s.eventName.includes(search))
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px" }}>
-      <h1>統計報表</h1>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-white mb-6">統計報表</h1>
 
-      <div style={{ display: "flex", gap: "16px", margin: "16px 0 32px" }}>
+      <div className="grid grid-cols-4 gap-3 mb-8">
         {[
-          { label: "活動總數", value: totalEvents, color: "#333" },
-          { label: "總報名人數", value: totalConfirmed, color: "green" },
-          { label: "總出席人數", value: totalCheckedIn, color: "blue" },
-          { label: "平均報名率", value: `${avgRegistrationRate}%`, color: "orange" },
-          { label: "平均出席率", value: `${avgCheckinRate}%`, color: "purple" },
+          { label: "活動總數", value: totalEvents, color: "text-white" },
+          { label: "總報名人數", value: totalConfirmed, color: "text-emerald-400" },
+          { label: "總出席人數", value: totalCheckedIn, color: "text-blue-400" },
+          { label: "平均出席率", value: `${avgCheckinRate}%`, color: "text-amber-400" },
         ].map(item => (
-          <div key={item.label} style={{
-            flex: 1,
-            padding: "16px",
-            border: "1px solid #eee",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}>
-            <p style={{ margin: 0, color: "#666", fontSize: "13px" }}>{item.label}</p>
-            <p style={{ margin: "4px 0 0", fontSize: "24px", fontWeight: "bold", color: item.color }}>
-              {item.value}
-            </p>
+          <div key={item.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-zinc-500 text-xs mb-1">{item.label}</p>
+            <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
           </div>
         ))}
       </div>
@@ -115,73 +78,56 @@ function HRDashboardPage() {
         placeholder="搜尋活動..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ width: "100%", padding: "8px", marginBottom: "16px", boxSizing: "border-box" as const }}
+        className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600 mb-4"
       />
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="flex flex-col gap-3">
         {filtered.map(stat => {
           const cap = stat.ticketLimit ?? stat.totalConfirmed
-          
+          const checkinRate = stat.totalConfirmed > 0
             ? Math.round(stat.totalCheckedIn / stat.totalConfirmed * 100)
             : 0
 
           return (
-            <div
-              key={stat.eventId}
-              style={{
-                padding: "20px",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <h2 style={{ margin: 0 }}>{stat.eventName}</h2>
+            <div key={stat.eventId} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-white font-semibold">{stat.eventName}</h2>
                 <button
                   onClick={() => navigate(`/admin/events/${stat.eventId}/registrations`)}
-                  style={{ padding: "6px 12px", cursor: "pointer" }}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
                 >
                   詳細名單
                 </button>
               </div>
 
-              <div style={{ display: "flex", gap: "24px", marginBottom: "16px" }}>
+              <div className="grid grid-cols-4 gap-4 mb-4">
                 {[
-                  { label: "正取", value: stat.totalConfirmed, color: "green" },
-                  { label: "候補", value: stat.totalWaitlist, color: "orange" },
-                  { label: "取消", value: stat.totalCancelled, color: "gray" },
-                  { label: "出席", value: stat.totalCheckedIn, color: "blue" },
+                  { label: "正取", value: stat.totalConfirmed, color: "text-emerald-400" },
+                  { label: "候補", value: stat.totalWaitlist, color: "text-amber-400" },
+                  { label: "取消", value: stat.totalCancelled, color: "text-zinc-500" },
+                  { label: "出席", value: stat.totalCheckedIn, color: "text-blue-400" },
                 ].map(item => (
-                  <div key={item.label} style={{ textAlign: "center" }}>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>{item.label}</p>
-                    <p style={{ margin: "2px 0 0", fontSize: "20px", fontWeight: "bold", color: item.color }}>
-                      {item.value}
-                    </p>
+                  <div key={item.label}>
+                    <p className="text-zinc-500 text-xs mb-0.5">{item.label}</p>
+                    <p className={`text-xl font-bold ${item.color}`}>{item.value}</p>
                   </div>
                 ))}
-                {stat.ticketLimit && (
-                  <div style={{ textAlign: "center" }}>
-                    <p style={{ margin: 0, fontSize: "12px", color: "#666" }}>名額</p>
-                    <p style={{ margin: "2px 0 0", fontSize: "20px", fontWeight: "bold" }}>
-                      {stat.ticketLimit}
-                    </p>
-                  </div>
-                )}
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div className="flex flex-col gap-2">
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                  <div className="flex justify-between text-xs text-zinc-500 mb-1">
                     <span>報名率</span>
                     <span>{stat.totalConfirmed} / {cap} 人</span>
                   </div>
-                  <StatBar value={stat.totalConfirmed} total={cap} color="green" />
+                  <StatBar value={stat.totalConfirmed} total={cap} color="bg-emerald-500" />
                 </div>
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                  <div className="flex justify-between text-xs text-zinc-500 mb-1">
                     <span>出席率</span>
                     <span>{stat.totalCheckedIn} / {stat.totalConfirmed} 人</span>
                   </div>
-                  <StatBar value={stat.totalCheckedIn} total={stat.totalConfirmed} color="blue" />
+                  <StatBar value={stat.totalCheckedIn} total={stat.totalConfirmed} color="bg-blue-500" />
                 </div>
               </div>
             </div>
