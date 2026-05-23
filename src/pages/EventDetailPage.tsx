@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { MOCK_EVENTS, MOCK_ELIGIBILITY } from "../mock/events"
 import { MOCK_TRANSACTIONS } from "../mock/transactions"
 import PageTransition from "../components/PageTransition"
@@ -17,7 +17,6 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
-  const navigate = useNavigate()
   const event = MOCK_EVENTS.find(e => e.eventId === eventId) ?? null
   const eligibility = MOCK_ELIGIBILITY
   const alreadyRegistered = MOCK_TRANSACTIONS.some(t => t.eventId === eventId)
@@ -175,14 +174,21 @@ function EventDetailPage() {
 
             {!event.ticketLimit && (
               <div>
-                <label className="text-zinc-400 text-sm block mb-2">攜帶家屬人數</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={guestCount}
-                  onChange={e => setGuestCount(Number(e.target.value))}
-                  className="w-24 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-zinc-500"
-                />
+                <label className="text-zinc-400 text-sm block mb-2">
+                  攜帶家屬人數：<span className="text-white font-semibold">{guestCount} 人</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <span className="text-zinc-500 text-xs">0</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={10}
+                    value={guestCount}
+                    onChange={e => setGuestCount(Number(e.target.value))}
+                    className="flex-1 accent-emerald-500"
+                  />
+                  <span className="text-zinc-500 text-xs">10</span>
+                </div>
               </div>
             )}
           </div>
