@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { MOCK_TRANSACTIONS } from "../mock/transactions"
 import PageTransition from "../components/PageTransition"
 import { TransactionCardSkeleton } from "../components/Skeleton"
+import Toast from "../components/Toast"
+import { useToast } from "../hooks/useToast"
 
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
@@ -23,6 +25,7 @@ function MyTransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | "">("")
+  const { toast, showToast } = useToast()
 
   useEffect(() => {
     setTimeout(() => {
@@ -35,6 +38,11 @@ function MyTransactionsPage() {
     if (statusFilter && t.status !== statusFilter) return false
     return true
   })
+
+  function handleCancel(transactionId: string) {
+    setTransactions(prev => prev.filter(tx => tx.transactionId !== transactionId))
+    showToast("取消報名成功", "success")
+  }
 
   return (
     <PageTransition>
@@ -112,7 +120,7 @@ function MyTransactionsPage() {
                       )}
                       {t.status === "confirmed" && (
                         <button
-                          onClick={() => alert("取消報名（之後換成真的 API）")}
+                          onClick={() => handleCancel(t.transactionId)}
                           className="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/50 text-red-400 transition-colors"
                         >
                           取消報名
@@ -126,6 +134,7 @@ function MyTransactionsPage() {
           </div>
         )}
       </div>
+      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
     </PageTransition>
   )
 }

@@ -1,7 +1,19 @@
 import type { Transaction } from "../types"
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
-  
+  {
+    transactionId: "tx_001",
+    eventId: "ev_001",
+    eventName: "夏日烤肉趴",
+    eventStartTime: "2025-07-15T18:00:00Z",
+    status: "confirmed",
+    waitlistNumber: null,
+    guestCount: 0,
+    dietType: null,
+    selfDriving: true,
+    registeredAt: "2025-05-18T09:00:00Z",
+    ticketId: "tk_001",
+  },
   {
     transactionId: "tx_002",
     eventId: "ev_003",
