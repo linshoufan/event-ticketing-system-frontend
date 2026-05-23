@@ -27,7 +27,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   deadline_desc: "截止最遠",
   tickets_asc:   "名額最少",
   tickets_desc:  "名額最多",
-  popular:       "最熱門",
+  popular:       "報名比例最高",
 }
 
 function sortEvents(events: Event[], sort: SortOption): Event[] {
