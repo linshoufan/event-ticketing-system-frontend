@@ -47,6 +47,7 @@ function ProfilePage() {
   }
 
   async function handleSave() {
+    localStorage.setItem("userTags", JSON.stringify(tags))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
