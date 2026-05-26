@@ -13,9 +13,12 @@ import CheckinPage from "./pages/admin/CheckinPage"
 import Navbar from "./components/Navbar"
 import HRDashboardPage from "./pages/admin/HRDashboardPage"
 import ProfilePage from "./pages/ProfilePage"
+import { useAutoLogout } from "./hooks/useAutoLogout"
 
 function Layout() {
   const location = useLocation()
+  useAutoLogout()
+
   const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
 
   return (
