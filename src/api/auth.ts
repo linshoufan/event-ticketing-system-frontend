@@ -27,6 +27,27 @@ export async function login(body: {
   password: string
   role: string | null
 }): Promise<{ token: string; role: string }> {
+  
+  // 🔽 === 這是模擬登入的假資料邏輯 === 🔽
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      // 只要帳號不是空白，我們就當作登入成功 (方便你測試)
+      // 你可以根據你在畫面上選擇的面版 (role) 給予對應的權限
+      if (body.employeeId.trim() && body.password.trim()) {
+        resolve({
+          token: "mock-jwt-token-123456789",
+          role: body.role || "employee" 
+        })
+      } else {
+        // 觸發密碼錯誤的提示
+        reject({ code: "INVALID_CREDENTIALS" })
+      }
+    }, 800) // 模擬網路延遲 0.8 秒
+  })
+  
+  /* 
+  // 🔼 等到未來後端 API 做好了，就把上面的 Promise 刪掉，並把下面的真實請求解除註解即可 🔼
+  
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -35,6 +56,7 @@ export async function login(body: {
   const json = await res.json()
   if (!res.ok) throw json.error
   return json.data
+  */
 }
 
 export async function getLoginUrl(): Promise<string> {
