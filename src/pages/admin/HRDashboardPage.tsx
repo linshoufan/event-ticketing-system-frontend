@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import PageTransition from "../../components/PageTransition"
 import { StatCardSkeleton } from "../../components/Skeleton"
+import { APP_CONFIG } from "../../config/app.config"
 
 const MOCK_HR_STATS = [
   {
@@ -55,7 +56,7 @@ function HRDashboardPage() {
     setTimeout(() => {
       setStats(MOCK_HR_STATS)
       setLoading(false)
-    }, 800)
+    }, APP_CONFIG.development.mockDelayMs)
   }, [])
 
   const totalEvents = stats.length

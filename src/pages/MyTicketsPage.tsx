@@ -4,6 +4,7 @@ import { MOCK_TICKETS } from "../mock/tickets"
 import type { Ticket, TicketStatus } from "../types"
 import PageTransition from "../components/PageTransition"
 import { TicketCardSkeleton } from "../components/Skeleton"
+import { APP_CONFIG } from "../config/app.config"
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string; dot: string }> = {
   unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
@@ -21,7 +22,7 @@ function MyTicketsPage() {
     setTimeout(() => {
       setTickets(MOCK_TICKETS)
       setLoading(false)
-    }, 800)
+    }, APP_CONFIG.development.mockDelayMs)
   }, [])
 
   const filtered = tickets.filter(t => {

@@ -5,6 +5,7 @@ import type { Event } from "../types"
 import EventCard from "../components/EventCard"
 import PageTransition from "../components/PageTransition"
 import { EventCardSkeleton } from "../components/Skeleton"
+import { APP_CONFIG } from "../config/app.config"
 
 const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
@@ -79,7 +80,7 @@ function EventListPage() {
     setTimeout(() => {
       setEvents(MOCK_EVENTS)
       setLoading(false)
-    }, 800)
+    }, APP_CONFIG.development.mockDelayMs)
   }, [])
 
   const filtered = sortEvents(

@@ -4,6 +4,7 @@ import type { Event } from "../../types"
 import { MOCK_EVENTS } from "../../mock/events"
 import PageTransition from "../../components/PageTransition"
 import { EventRowSkeleton } from "../../components/Skeleton"
+import { APP_CONFIG } from "../../config/app.config"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   not_open:    { label: "尚未開始報名", color: "text-zinc-400",   bg: "bg-zinc-800" },
@@ -22,7 +23,7 @@ function EventManagePage() {
     setTimeout(() => {
       setEvents(MOCK_EVENTS)
       setLoading(false)
-    }, 800)
+    }, APP_CONFIG.development.mockDelayMs)
   }, [])
 
   async function handleDelete(eventId: string) {

@@ -1,13 +1,7 @@
 import type { User } from "../types"
+import { APP_CONFIG } from "../config/app.config"
 
-const BASE_URL = "https://api.your-domain.com/v1"
-
-// dev mock 帳號
-const DEV_ACCOUNTS: Record<string, { password: string; role: string }> = {
-  "E001": { password: "1234", role: "employee" },
-  "W001": { password: "1234", role: "welfare_member" },
-  "H001": { password: "1234", role: "hr" },
-}
+const BASE_URL = APP_CONFIG.api.baseUrl
 
 function getToken(): string | null {
   return localStorage.getItem("token")
@@ -33,22 +27,14 @@ export async function login(body: {
   password: string
   role: string | null
 }): Promise<{ token: string; role: string }> {
-  await new Promise(r => setTimeout(r, 600))
-
-  const account = DEV_ACCOUNTS[body.employeeId]
-
-  if (!account || account.password !== body.password) {
-    throw { code: "INVALID_CREDENTIALS", message: "員工編號或密碼錯誤" }
-  }
-
-  if (body.role !== null && account.role !== body.role) {
-    throw { code: "ROLE_MISMATCH", message: "角色不符" }
-  }
-
-  return {
-    token: `dev-token-${account.role}`,
-    role: account.role,
-  }
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw json.error
+  return json.data
 }
 
 export async function getLoginUrl(): Promise<string> {

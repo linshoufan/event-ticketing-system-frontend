@@ -6,6 +6,7 @@ import PageTransition from "../components/PageTransition"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
 import { useDebounce } from "../hooks/useDebounce"
+import { APP_CONFIG } from "../config/app.config"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   not_open:    { label: "尚未開始報名", color: "text-zinc-400", bg: "bg-zinc-800" },
@@ -32,7 +33,7 @@ function EventDetailPage() {
     setRegistering(true)
     try {
       // 之後換成真的 API
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise(r => setTimeout(r, APP_CONFIG.development.mockActionDelayMs))
       showToast("報名成功！", "success")
     } catch {
       showToast("報名失敗，請稍後再試", "error")

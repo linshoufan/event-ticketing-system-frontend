@@ -1,20 +1,21 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { removeToken } from "../api/auth"
+import { APP_CONFIG } from "../config/app.config"
 
-const AUTO_LOGOUT_MINUTES = 30
+const { autoLogoutMinutes, expiryKey, tokenKey, roleKey } = APP_CONFIG.auth
 
 export function saveLoginTime() {
-  const expiry = Date.now() + AUTO_LOGOUT_MINUTES * 60 * 1000
-  localStorage.setItem("tokenExpiry", String(expiry))
+  const expiry = Date.now() + autoLogoutMinutes * 60 * 1000
+  localStorage.setItem(expiryKey, String(expiry))
 }
 
 export function clearLoginTime() {
-  localStorage.removeItem("tokenExpiry")
+  localStorage.removeItem(expiryKey)
 }
 
 export function isTokenExpired(): boolean {
-  const expiry = localStorage.getItem("tokenExpiry")
+  const expiry = localStorage.getItem(expiryKey)
   if (!expiry) return false
   return Date.now() > Number(expiry)
 }
@@ -23,16 +24,15 @@ export function useAutoLogout() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem(tokenKey)
     if (!token) return
 
-    // 進頁面時先檢查一次有沒有過期
     if (isTokenExpired()) {
       handleLogout()
       return
     }
 
-    const expiry = localStorage.getItem("tokenExpiry")
+    const expiry = localStorage.getItem(expiryKey)
     if (!expiry) return
 
     const remaining = Number(expiry) - Date.now()
@@ -45,7 +45,7 @@ export function useAutoLogout() {
 
     function handleLogout() {
       removeToken()
-      localStorage.removeItem("role")
+      localStorage.removeItem(roleKey)
       clearLoginTime()
       navigate("/", { replace: true })
     }

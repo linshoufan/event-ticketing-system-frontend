@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom"
 import { MOCK_TICKETS } from "../mock/tickets"
 import type { TicketStatus } from "../types"
 import PageTransition from "../components/PageTransition"
+import { APP_CONFIG } from "../config/app.config"
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string }> = {
   unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30" },
@@ -28,7 +29,7 @@ function TicketDetailPage() {
           setMessage("報到成功！")
           if (ticket) setTicket({ ...ticket, status: "used", checkinAvailable: false })
           setCheckingIn(false)
-        }, 500)
+        }, APP_CONFIG.development.mockActionDelayMs)
       },
       () => {
         setMessage("無法取得您的位置，請確認已開啟定位權限")

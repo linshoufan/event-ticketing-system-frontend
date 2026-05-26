@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { MOCK_USERS } from "../../mock/users"
 import PageTransition from "../../components/PageTransition"
 import { UserRowSkeleton } from "../../components/Skeleton"
+import { APP_CONFIG } from "../../config/app.config"
 
 type UserStatus = "active" | "locked"
 
@@ -25,7 +26,7 @@ function UserManagePage() {
     setTimeout(() => {
       setUsers(MOCK_USERS)
       setLoading(false)
-    }, 800)
+    }, APP_CONFIG.development.mockDelayMs)
   }, [])
 
   const filtered = users.filter(u => {

@@ -67,6 +67,7 @@ src/
     Skeleton.tsx
     Toast.tsx
   hooks/
+    useAutoLogout.ts
     useDebounce.ts
     useToast.ts
   mock/
@@ -106,6 +107,8 @@ src/
   App.tsx
   index.css
   main.tsx
+.env.development
+.env.production
 .gitignore
 eslint.config.js
 index.html
@@ -119,6 +122,16 @@ vite.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path=".env.development">
+# 本地開發環境：指向你電腦上執行的後端服務（假設後端跑在 5000 埠）
+VITE_API_BASE_URL=http://localhost:5173/v1
+</file>
+
+<file path=".env.production">
+# 線上正式環境：指向你部署在雲端伺服器的真實後端網址
+VITE_API_BASE_URL=https://event-ticketing-system-frontend-eight.vercel.app/
+</file>
 
 <file path="public/favicon.svg">
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
@@ -155,7 +168,7 @@ This section contains the contents of the repository's files.
 import type { Event, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
 
-const BASE_URL = "https://api.your-domain.com/v1"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "https://api.your-domain.com/v1";
 
 export async function getEvents(params?: {
   page?: number
@@ -273,7 +286,7 @@ export async function fetchWithRetry(
 import type { Ticket } from "../types"
 import { getAuthHeaders } from "./auth"
 
-const BASE_URL = "https://api.your-domain.com/v1"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "https://api.your-domain.com/v1";
 
 export async function getTickets(params?: {
   status?: "used" | "unused" | "invalid"
@@ -348,7 +361,7 @@ export async function getEventTickets(
 import type { Transaction, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
 
-const BASE_URL = "https://api.your-domain.com/v1"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "https://api.your-domain.com/v1";
 
 export async function getTransactions(params?: {
   page?: number
@@ -426,35 +439,6 @@ export async function cancelTransaction(
 
 <file path="src/assets/vite.svg">
 <svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
-</file>
-
-<file path="src/components/PageTransition.tsx">
-import { useEffect, useState } from "react"
-
-interface Props {
-  children: React.ReactNode
-}
-
-function PageTransition({ children }: Props) {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), 10)
-    return () => clearTimeout(timer)
-  }, [])
-
-  return (
-    <div
-      className={`transition-all duration-400 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-      }`}
-    >
-      {children}
-    </div>
-  )
-}
-
-export default PageTransition
 </file>
 
 <file path="src/components/Skeleton.tsx">
@@ -610,6 +594,62 @@ function Toast({ message, type, visible }: ToastProps) {
 }
 
 export default Toast
+</file>
+
+<file path="src/hooks/useAutoLogout.ts">
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { removeToken } from "../api/auth"
+
+const AUTO_LOGOUT_MINUTES = 30
+
+export function saveLoginTime() {
+  const expiry = Date.now() + AUTO_LOGOUT_MINUTES * 60 * 1000
+  localStorage.setItem("tokenExpiry", String(expiry))
+}
+
+export function clearLoginTime() {
+  localStorage.removeItem("tokenExpiry")
+}
+
+export function isTokenExpired(): boolean {
+  const expiry = localStorage.getItem("tokenExpiry")
+  if (!expiry) return false
+  return Date.now() > Number(expiry)
+}
+
+export function useAutoLogout() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    // 進頁面時先檢查一次有沒有過期
+    if (isTokenExpired()) {
+      handleLogout()
+      return
+    }
+
+    const expiry = localStorage.getItem("tokenExpiry")
+    if (!expiry) return
+
+    const remaining = Number(expiry) - Date.now()
+
+    const timer = setTimeout(() => {
+      handleLogout()
+    }, remaining)
+
+    return () => clearTimeout(timer)
+
+    function handleLogout() {
+      removeToken()
+      localStorage.removeItem("role")
+      clearLoginTime()
+      navigate("/", { replace: true })
+    }
+  }, [navigate])
+}
 </file>
 
 <file path="src/hooks/useDebounce.ts">
@@ -1598,73 +1638,6 @@ jobs:
         run: npm run build
 </file>
 
-<file path="src/api/auth.ts">
-import type { User } from "../types"
-
-const BASE_URL = "https://api.your-domain.com/v1"
-
-function getToken(): string | null {
-  return localStorage.getItem("token")
-}
-
-export function saveToken(token: string): void {
-  localStorage.setItem("token", token)
-}
-
-export function removeToken(): void {
-  localStorage.removeItem("token")
-}
-
-export function getAuthHeaders(): HeadersInit {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${getToken()}`,
-  }
-}
-
-export async function getLoginUrl(): Promise<string> {
-  const res = await fetch(`${BASE_URL}/auth/login`)
-  const json = await res.json()
-  return json.data.loginUrl
-}
-
-export async function handleCallback(code: string): Promise<{
-  token: string
-  role: string
-}> {
-  const res = await fetch(`${BASE_URL}/auth/callback?code=${code}`)
-  const json = await res.json()
-  return json.data
-}
-
-export async function logout(): Promise<void> {
-  await fetch(`${BASE_URL}/auth/logout`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-  })
-  removeToken()
-}
-
-export async function getMe(): Promise<User> {
-  const res = await fetch(`${BASE_URL}/me`, {
-    headers: getAuthHeaders(),
-  })
-  const json = await res.json()
-  return {
-    userId: json.data.userId,
-    username: json.data.username,
-    email: json.data.email,
-    role: json.data.role,
-    registrationStatus: json.data.registrationStatus,
-    unlockAt: json.data.unlockAt,
-    dietType: json.data.dietType,
-    selfDriving: json.data.selfDriving,
-    tags: json.data.tags ?? [],
-    preferences: json.data.preferences ?? [],
-  }
-}
-</file>
-
 <file path="src/components/EventCard.tsx">
 import type { Event } from "../types"
 
@@ -1746,6 +1719,35 @@ function EventCard({ event, onClick }: Props) {
 }
 
 export default EventCard
+</file>
+
+<file path="src/components/PageTransition.tsx">
+import { useEffect, useState } from "react"
+
+interface Props {
+  children: React.ReactNode
+}
+
+function PageTransition({ children }: Props) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), 10)
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <div
+      className={`transition-all duration-500 ease-out ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
+export default PageTransition
 </file>
 
 <file path="src/mock/users.ts">
@@ -2598,6 +2600,88 @@ export default defineConfig({
 })
 </file>
 
+<file path="src/api/auth.ts">
+import type { User } from "../types"
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "https://api.your-domain.com/v1"
+
+function getToken(): string | null {
+  return localStorage.getItem("token")
+}
+
+export function saveToken(token: string): void {
+  localStorage.setItem("token", token)
+}
+
+export function removeToken(): void {
+  localStorage.removeItem("token")
+}
+
+export function getAuthHeaders(): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${getToken()}`,
+  }
+}
+
+export async function login(body: {
+  employeeId: string
+  password: string
+  role: string | null
+}): Promise<{ token: string; role: string }> {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw json.error
+  return json.data
+}
+
+export async function getLoginUrl(): Promise<string> {
+  const res = await fetch(`${BASE_URL}/auth/login`)
+  const json = await res.json()
+  return json.data.loginUrl
+}
+
+export async function handleCallback(code: string): Promise<{
+  token: string
+  role: string
+}> {
+  const res = await fetch(`${BASE_URL}/auth/callback?code=${code}`)
+  const json = await res.json()
+  return json.data
+}
+
+export async function logout(): Promise<void> {
+  await fetch(`${BASE_URL}/auth/logout`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  })
+  removeToken()
+}
+
+export async function getMe(): Promise<User> {
+  const res = await fetch(`${BASE_URL}/me`, {
+    headers: getAuthHeaders(),
+  })
+  const json = await res.json()
+  return {
+    userId: json.data.userId,
+    username: json.data.username,
+    email: json.data.email,
+    role: json.data.role,
+    registrationStatus: json.data.registrationStatus,
+    unlockAt: json.data.unlockAt,
+    dietType: json.data.dietType,
+    selfDriving: json.data.selfDriving,
+    tags: json.data.tags ?? [],
+    preferences: json.data.preferences ?? [],
+  }
+}
+</file>
+
 <file path="src/pages/admin/CheckinPage.tsx">
 import { useState } from "react"
 import { useParams } from "react-router-dom"
@@ -2761,125 +2845,6 @@ export default CheckinPage
     "vitest": "^4.1.7"
   }
 }
-</file>
-
-<file path="src/pages/LoginPage.tsx">
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { saveToken } from "../api/auth"
-import photo1 from "../assets/photo1.jpg"
-import photo2 from "../assets/photo2.jpg"
-import photo3 from "../assets/photo3.jpg"
-
-const photos = [photo1, photo2, photo3]
-
-function LoginPage() {
-  const navigate = useNavigate()
-  const [leaving, setLeaving] = useState(false)
-  const [currentPhoto, setCurrentPhoto] = useState(0)
-  const [fadeIn, setFadeIn] = useState(true)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFadeIn(false)
-      setTimeout(() => {
-        setCurrentPhoto(prev => (prev + 1) % photos.length)
-        setFadeIn(true)
-      }, 1500)
-    }, 8000)
-    return () => clearInterval(interval)
-  }, [])
-
-  function handleFakeLogin(role: string) {
-    setLeaving(true)
-    saveToken(`fake-token-${role}`)
-    localStorage.setItem("role", role)
-
-    setTimeout(() => {
-      if (role === "welfare_member") {
-        navigate("/admin/events")
-      } else if (role === "hr") {
-        navigate("/admin/hr")
-      } else {
-        navigate("/events")
-      }
-    }, 600)
-  }
-
-  return (
-    <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden">
-
-      {/* 背景照片 */}
-      <div
-        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1500 ${fadeIn ? "opacity-100" : "opacity-0"}`}
-        style={{ backgroundImage: `url(${photos[currentPhoto]})` }}
-      />
-
-      {/* 深色遮罩 */}
-      <div className="absolute inset-0 bg-zinc-950/80" />
-
-      {/* 內容 */}
-      <div
-        className={`relative z-10 w-full max-w-md transition-all duration-500 ${
-          leaving ? "opacity-0 translate-y-[-40px]" : "opacity-100 translate-y-0"
-        }`}
-      >
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-800/80 backdrop-blur mb-6">
-            <span className="text-3xl">🎫</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            企業活動訂票系統
-          </h1>
-          <p className="text-zinc-400 mt-2 text-sm">
-            請選擇角色登入（開發模式）
-          </p>
-        </div>
-
-        <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-6 flex flex-col gap-3">
-          <button
-            onClick={() => handleFakeLogin("employee")}
-            className="w-full py-3 px-4 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-white text-sm font-medium transition-colors flex items-center gap-3"
-          >
-            <span className="text-lg">👤</span>
-            <div className="text-left">
-              <p className="font-semibold">一般員工</p>
-              <p className="text-zinc-400 text-xs">瀏覽活動、報名、查看票券</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleFakeLogin("welfare_member")}
-            className="w-full py-3 px-4 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-white text-sm font-medium transition-colors flex items-center gap-3"
-          >
-            <span className="text-lg">⚙️</span>
-            <div className="text-left">
-              <p className="font-semibold">福委會</p>
-              <p className="text-zinc-400 text-xs">管理活動、使用者、核銷票券</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => handleFakeLogin("hr")}
-            className="w-full py-3 px-4 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-white text-sm font-medium transition-colors flex items-center gap-3"
-          >
-            <span className="text-lg">📊</span>
-            <div className="text-left">
-              <p className="font-semibold">HR</p>
-              <p className="text-zinc-400 text-xs">查看活動統計與報名數據</p>
-            </div>
-          </button>
-        </div>
-
-        <p className="text-center text-zinc-600 text-xs mt-4">
-          正式版本將使用 Google 帳號登入
-        </p>
-      </div>
-    </div>
-  )
-}
-
-export default LoginPage
 </file>
 
 <file path="src/pages/MyTicketsPage.tsx">
@@ -3350,6 +3315,278 @@ function RegistrationDetailPage() {
 export default RegistrationDetailPage
 </file>
 
+<file path="src/pages/LoginPage.tsx">
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { login, saveToken } from "../api/auth"
+import { saveLoginTime } from "../hooks/useAutoLogout"
+import photo1 from "../assets/photo1.jpg"
+import photo2 from "../assets/photo2.jpg"
+import photo3 from "../assets/photo3.jpg"
+
+const photos = [photo1, photo2, photo3]
+
+type LoginType = "first" | "employee" | "welfare_member" | "hr"
+
+const LOGIN_OPTIONS: { type: LoginType; label: string; sublabel: string; icon: string; role: string | null }[] = [
+  {
+    type: "employee",
+    label: "員工登入",
+    sublabel: "瀏覽活動、報名、查看票券",
+    icon: "👤",
+    role: "employee",
+  },
+  {
+    type: "welfare_member",
+    label: "福委登入",
+    sublabel: "管理活動、使用者、核銷票券",
+    icon: "⚙️",
+    role: "welfare_member",
+  },
+  {
+    type: "hr",
+    label: "HR 登入",
+    sublabel: "查看活動統計與報名數據",
+    icon: "📊",
+    role: "hr",
+  },
+  {
+    type: "first",
+    label: "第一次登入",
+    sublabel: "使用員工編號建立帳號",
+    icon: "✨",
+    role: null,
+  },
+]
+
+function LoginPage() {
+  const navigate = useNavigate()
+  const [mounted, setMounted] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [currentPhoto, setCurrentPhoto] = useState(0)
+  const [fadeIn, setFadeIn] = useState(true)
+
+  const [selectedType, setSelectedType] = useState<LoginType | null>(null)
+  const [animating, setAnimating] = useState(false)
+  const [employeeId, setEmployeeId] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 10)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFadeIn(false)
+      setTimeout(() => {
+        setCurrentPhoto(prev => (prev + 1) % photos.length)
+        setFadeIn(true)
+      }, 1500)
+    }, 8000)
+    return () => clearInterval(interval)
+  }, [])
+
+  function handleSelectType(type: LoginType) {
+    setAnimating(true)
+    setTimeout(() => {
+      setSelectedType(type)
+      setEmployeeId("")
+      setPassword("")
+      setError("")
+      setAnimating(false)
+    }, 200)
+  }
+
+  function handleBack() {
+    setAnimating(true)
+    setTimeout(() => {
+      setSelectedType(null)
+      setError("")
+      setAnimating(false)
+    }, 200)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!employeeId.trim() || !password.trim()) {
+      setError("請填寫員工編號和密碼")
+      return
+    }
+
+    const option = LOGIN_OPTIONS.find(o => o.type === selectedType)!
+    setLoading(true)
+    setError("")
+
+    try {
+      const { token, role } = await login({
+        employeeId: employeeId.trim(),
+        password,
+        role: option.role,
+      })
+
+      saveToken(token)
+      localStorage.setItem("role", role)
+      saveLoginTime()
+
+      setLeaving(true)
+      setTimeout(() => {
+        if (role === "welfare_member") {
+          navigate("/admin/events")
+        } else if (role === "hr") {
+          navigate("/admin/hr")
+        } else {
+          navigate("/events")
+        }
+      }, 500)
+    } catch (err: any) {
+      const code = err?.code
+      if (code === "INVALID_CREDENTIALS") {
+        setError("員工編號或密碼錯誤")
+      } else if (code === "ROLE_MISMATCH") {
+        setError("您的帳號權限不符，請選擇正確的登入方式")
+      } else {
+        setError("登入失敗，請稍後再試")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const selectedOption = LOGIN_OPTIONS.find(o => o.type === selectedType)
+
+  return (
+    <div className="min-h-screen relative flex items-center justify-center px-4 overflow-hidden">
+
+      {/* 背景照片 */}
+      <div
+        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1500 ${fadeIn ? "opacity-100" : "opacity-0"}`}
+        style={{ backgroundImage: `url(${photos[currentPhoto]})` }}
+      />
+
+      {/* 深色遮罩 */}
+      <div className="absolute inset-0 bg-zinc-950/80" />
+
+      {/* 內容 */}
+      <div
+        className={`relative z-10 w-full max-w-md transition-all duration-500 ease-out ${
+          leaving
+            ? "opacity-0 -translate-y-12"
+            : mounted
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-12"
+        }`}
+      >
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-800/80 backdrop-blur mb-6">
+            <span className="text-3xl">🎫</span>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            企業活動訂票系統
+          </h1>
+          <p className="text-zinc-400 mt-2 text-sm">
+            {selectedType ? "請輸入您的員工編號與密碼" : "請選擇登入方式"}
+          </p>
+        </div>
+
+        <div className="bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-2xl p-6 overflow-hidden">
+
+          <div className={`transition-all duration-200 ease-out ${
+            animating ? "opacity-0 translate-y-3" : "opacity-100 translate-y-0"
+          }`}>
+
+            {/* 選擇登入類型 */}
+            {!selectedType && (
+              <div className="flex flex-col gap-3">
+                {LOGIN_OPTIONS.map(option => (
+                  <button
+                    key={option.type}
+                    onClick={() => handleSelectType(option.type)}
+                    className="w-full py-3 px-4 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-white text-sm font-medium transition-colors flex items-center gap-3"
+                  >
+                    <span className="text-lg">{option.icon}</span>
+                    <div className="text-left">
+                      <p className="font-semibold">{option.label}</p>
+                      <p className="text-zinc-400 text-xs">{option.sublabel}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 登入表單 */}
+            {selectedType && selectedOption && (
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors flex items-center justify-center text-sm flex-shrink-0"
+                  >
+                    ←
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{selectedOption.icon}</span>
+                    <span className="text-white font-semibold">{selectedOption.label}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-zinc-400 text-sm block mb-2">員工編號</label>
+                  <input
+                    type="text"
+                    value={employeeId}
+                    onChange={e => setEmployeeId(e.target.value)}
+                    placeholder="請輸入員工編號"
+                    autoComplete="username"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-zinc-400 text-sm block mb-2">密碼</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="請輸入密碼"
+                    autoComplete="current-password"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+                  />
+                </div>
+
+                {error && (
+                  <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl bg-white hover:bg-zinc-100 disabled:opacity-50 text-zinc-900 font-semibold transition-colors mt-1"
+                >
+                  {loading ? "登入中..." : "登入"}
+                </button>
+              </form>
+            )}
+
+          </div>
+        </div>
+
+        <p className="text-center text-zinc-600 text-xs mt-4">
+          使用公司員工帳號登入
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default LoginPage
+</file>
+
 <file path="src/pages/ProfilePage.tsx">
 import { useState } from "react"
 import PageTransition from "../components/PageTransition"
@@ -3510,61 +3747,6 @@ function ProfilePage() {
 }
 
 export default ProfilePage
-</file>
-
-<file path="src/App.tsx">
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
-import LoginPage from "./pages/LoginPage"
-import EventListPage from "./pages/EventListPage"
-import EventDetailPage from "./pages/EventDetailPage"
-import MyTicketsPage from "./pages/MyTicketsPage"
-import TicketDetailPage from "./pages/TicketDetailPage"
-import MyTransactionsPage from "./pages/MyTransactionsPage"
-import EventManagePage from "./pages/admin/EventManagePage"
-import RegistrationDetailPage from "./pages/admin/RegistrationDetailPage"
-import UserManagePage from "./pages/admin/UserManagePage"
-import CreateEventPage from "./pages/admin/CreateEventPage"
-import CheckinPage from "./pages/admin/CheckinPage"
-import Navbar from "./components/Navbar"
-import HRDashboardPage from "./pages/admin/HRDashboardPage"
-import ProfilePage from "./pages/ProfilePage"
-
-function Layout() {
-  const location = useLocation()
-  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
-
-  return (
-    <>
-      {!hideNavbar && <Navbar />}
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/auth/callback" element={<LoginPage />} />
-        <Route path="/events" element={<EventListPage />} />
-        <Route path="/events/:eventId" element={<EventDetailPage />} />
-        <Route path="/my-transactions" element={<MyTransactionsPage />} />
-        <Route path="/my-tickets" element={<MyTicketsPage />} />
-        <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-        <Route path="/admin/events" element={<EventManagePage />} />
-        <Route path="/admin/events/new" element={<CreateEventPage />} />
-        <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-        <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-        <Route path="/admin/users" element={<UserManagePage />} />
-        <Route path="/admin/hr" element={<HRDashboardPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      </Routes>
-    </>
-  )
-}
-
-function App() {
-  return (
-    <BrowserRouter>
-      <Layout />
-    </BrowserRouter>
-  )
-}
-
-export default App
 </file>
 
 <file path="src/pages/admin/HRDashboardPage.tsx">
@@ -4071,6 +4253,64 @@ function MyTransactionsPage() {
 }
 
 export default MyTransactionsPage
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import LoginPage from "./pages/LoginPage"
+import EventListPage from "./pages/EventListPage"
+import EventDetailPage from "./pages/EventDetailPage"
+import MyTicketsPage from "./pages/MyTicketsPage"
+import TicketDetailPage from "./pages/TicketDetailPage"
+import MyTransactionsPage from "./pages/MyTransactionsPage"
+import EventManagePage from "./pages/admin/EventManagePage"
+import RegistrationDetailPage from "./pages/admin/RegistrationDetailPage"
+import UserManagePage from "./pages/admin/UserManagePage"
+import CreateEventPage from "./pages/admin/CreateEventPage"
+import CheckinPage from "./pages/admin/CheckinPage"
+import Navbar from "./components/Navbar"
+import HRDashboardPage from "./pages/admin/HRDashboardPage"
+import ProfilePage from "./pages/ProfilePage"
+import { useAutoLogout } from "./hooks/useAutoLogout"
+
+function Layout() {
+  const location = useLocation()
+  useAutoLogout()
+
+  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<LoginPage />} />
+        <Route path="/events" element={<EventListPage />} />
+        <Route path="/events/:eventId" element={<EventDetailPage />} />
+        <Route path="/my-transactions" element={<MyTransactionsPage />} />
+        <Route path="/my-tickets" element={<MyTicketsPage />} />
+        <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
+        <Route path="/admin/events" element={<EventManagePage />} />
+        <Route path="/admin/events/new" element={<CreateEventPage />} />
+        <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
+        <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
+        <Route path="/admin/users" element={<UserManagePage />} />
+        <Route path="/admin/hr" element={<HRDashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Routes>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Layout />
+    </BrowserRouter>
+  )
+}
+
+export default App
 </file>
 
 <file path="src/pages/EventDetailPage.tsx">

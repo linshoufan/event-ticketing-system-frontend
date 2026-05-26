@@ -5,6 +5,7 @@ import PageTransition from "../components/PageTransition"
 import { TransactionCardSkeleton } from "../components/Skeleton"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
+import { APP_CONFIG } from "../config/app.config"
 
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
@@ -31,7 +32,7 @@ function MyTransactionsPage() {
     setTimeout(() => {
       setTransactions(MOCK_TRANSACTIONS)
       setLoading(false)
-    }, 800)
+    }, APP_CONFIG.development.mockDelayMs)
   }, [])
 
   const filtered = transactions.filter(t => {
