@@ -4,8 +4,8 @@ import type { Role } from "../../types"
 function getRoleLabel(role: Role): string {
   const map: Record<Role, string> = {
     welfare_member: "福委會",
-    employee: "一般員工",
-    hr: "HR",
+    employee:       "一般員工",
+    hr:             "HR",
   }
   return map[role]
 }
@@ -24,6 +24,19 @@ function canRegister(role: Role): boolean {
 
 function canManageUsers(role: Role): boolean {
   return role === "welfare_member"
+}
+
+function canCheckin(role: Role): boolean {
+  return role === "welfare_member"
+}
+
+function getDefaultRoute(role: Role): string {
+  const map: Record<Role, string> = {
+    welfare_member: "/admin/events",
+    employee:       "/events",
+    hr:             "/admin/hr",
+  }
+  return map[role]
 }
 
 describe("getRoleLabel", () => {
@@ -93,5 +106,33 @@ describe("canManageUsers", () => {
 
   it("hr 不能管理使用者", () => {
     expect(canManageUsers("hr")).toBe(false)
+  })
+})
+
+describe("canCheckin", () => {
+  it("welfare_member 可以核銷票券", () => {
+    expect(canCheckin("welfare_member")).toBe(true)
+  })
+
+  it("employee 不能核銷票券", () => {
+    expect(canCheckin("employee")).toBe(false)
+  })
+
+  it("hr 不能核銷票券", () => {
+    expect(canCheckin("hr")).toBe(false)
+  })
+})
+
+describe("getDefaultRoute", () => {
+  it("welfare_member 預設頁面應該是活動管理", () => {
+    expect(getDefaultRoute("welfare_member")).toBe("/admin/events")
+  })
+
+  it("employee 預設頁面應該是活動列表", () => {
+    expect(getDefaultRoute("employee")).toBe("/events")
+  })
+
+  it("hr 預設頁面應該是統計報表", () => {
+    expect(getDefaultRoute("hr")).toBe("/admin/hr")
   })
 })

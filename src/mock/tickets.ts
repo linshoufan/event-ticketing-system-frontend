@@ -28,3 +28,9 @@ export const MOCK_TICKETS: Ticket[] = [
     checkinAvailable: false,
   },
 ]
+// src/mock/tickets.ts 新增：
+export const MOCK_CHECKIN_TICKETS = [
+  { ticketId: "tk_001", userId: "u_abc123", username: "john.doe", status: "unused" as const },
+  { ticketId: "tk_002", userId: "u_xyz789", username: "jane.smith", status: "used" as const },
+  { ticketId: "tk_003", userId: "u_locked01", username: "bob.wang", status: "unused" as const },
+]

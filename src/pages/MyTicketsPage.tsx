@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { MOCK_TICKETS } from "../mock/tickets"
+import { getTickets } from "../api/tickets"
 import type { Ticket, TicketStatus } from "../types"
 import PageTransition from "../components/PageTransition"
 import { TicketCardSkeleton } from "../components/Skeleton"
-import { APP_CONFIG } from "../config/app.config"
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string; dot: string }> = {
   unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
@@ -19,16 +18,14 @@ function MyTicketsPage() {
   const [filter, setFilter] = useState<TicketStatus | "">("")
 
   useEffect(() => {
-    setTimeout(() => {
-      setTickets(MOCK_TICKETS)
-      setLoading(false)
-    }, APP_CONFIG.development.mockDelayMs)
-  }, [])
-
-  const filtered = tickets.filter(t => {
-    if (filter && t.status !== filter) return false
-    return true
-  })
+    setLoading(true)
+    getTickets(filter ? { status: filter } : undefined)
+      .then(data => {
+        setTickets(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [filter])
 
   return (
     <PageTransition>
@@ -51,14 +48,14 @@ function MyTicketsPage() {
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => <TicketCardSkeleton key={i} />)}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : tickets.length === 0 ? (
           <div className="text-center py-16 text-zinc-500">
             <p className="text-4xl mb-3">🎫</p>
             <p>沒有票券</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filtered.map((ticket: Ticket) => {
+            {tickets.map((ticket: Ticket) => {
               const config = STATUS_CONFIG[ticket.status]
               return (
                 <div

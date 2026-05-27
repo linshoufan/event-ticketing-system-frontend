@@ -1,42 +1,64 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { MOCK_EVENTS, MOCK_ELIGIBILITY } from "../mock/events"
-import { MOCK_TRANSACTIONS } from "../mock/transactions"
+import { getEventById, checkEligibility } from "../api/events"
+import { createTransaction } from "../api/transactions"
+import type { Event } from "../types"
 import PageTransition from "../components/PageTransition"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
 import { useDebounce } from "../hooks/useDebounce"
-import { APP_CONFIG } from "../config/app.config"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  not_open:    { label: "尚未開始報名", color: "text-zinc-400", bg: "bg-zinc-800" },
+  not_open:    { label: "尚未開始報名", color: "text-zinc-400",   bg: "bg-zinc-800" },
   registering: { label: "報名中",       color: "text-emerald-400", bg: "bg-emerald-900/30" },
-  waitlist:    { label: "候補登記",     color: "text-amber-400", bg: "bg-amber-900/30" },
-  closed:      { label: "報名截止",     color: "text-red-400", bg: "bg-red-900/30" },
-  ended:       { label: "活動結束",     color: "text-zinc-500", bg: "bg-zinc-800" },
+  waitlist:    { label: "候補登記",     color: "text-amber-400",   bg: "bg-amber-900/30" },
+  closed:      { label: "報名截止",     color: "text-red-400",     bg: "bg-red-900/30" },
+  ended:       { label: "活動結束",     color: "text-zinc-500",    bg: "bg-zinc-800" },
 }
 
 function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
-  const event = MOCK_EVENTS.find(e => e.eventId === eventId) ?? null
-  const eligibility = MOCK_ELIGIBILITY
-  const alreadyRegistered = MOCK_TRANSACTIONS.some(t => t.eventId === eventId)
   const { toast, showToast } = useToast()
+
+  const [event, setEvent] = useState<Event | null>(null)
+  const [eligibility, setEligibility] = useState<any>(null)
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const [dietType, setDietType] = useState<"veg" | "non-veg" | null>(null)
   const [selfDriving, setSelfDriving] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
   const [registering, setRegistering] = useState(false)
 
+  useEffect(() => {
+    if (!eventId) return
+    setLoading(true)
+    Promise.all([
+      getEventById(eventId),
+      checkEligibility(eventId),
+    ]).then(([ev, elig]) => {
+      setEvent(ev)
+      setEligibility(elig)
+      setAlreadyRegistered(elig.reason === "ALREADY_REGISTERED")
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [eventId])
+
   async function handleRegisterAction() {
-    if (registering) return
+    if (!eventId || registering) return
     setRegistering(true)
     try {
-      // 之後換成真的 API
-      await new Promise(r => setTimeout(r, APP_CONFIG.development.mockActionDelayMs))
+      await createTransaction({
+        eventId,
+        guestCount,
+        dietType: dietType ?? "none",
+        selfDriving,
+        saveAutofill: false,
+      })
       showToast("報名成功！", "success")
-    } catch {
-      showToast("報名失敗，請稍後再試", "error")
+      setAlreadyRegistered(true)
+    } catch (err: any) {
+      showToast(err?.message ?? "報名失敗，請稍後再試", "error")
     } finally {
       setRegistering(false)
     }
@@ -85,6 +107,10 @@ function EventDetailPage() {
       </div>
     )
   }
+
+  if (loading) return (
+    <div className="text-center py-16 text-zinc-500">載入中...</div>
+  )
 
   if (!event) return (
     <div className="text-center py-16 text-zinc-500">找不到活動</div>

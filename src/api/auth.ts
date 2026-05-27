@@ -2,6 +2,13 @@ import type { User } from "../types"
 import { APP_CONFIG } from "../config/app.config"
 
 const BASE_URL = APP_CONFIG.api.baseUrl
+const { useMock, mockDelayMs } = APP_CONFIG.development
+
+const MOCK_ACCOUNTS = [
+  { employeeId: "W001",    password: "1234", role: "welfare_member" },
+  { employeeId: "E001", password: "1234", role: "employee" },
+  { employeeId: "H001",       password: "1234", role: "hr" },
+]
 
 function getToken(): string | null {
   return localStorage.getItem("token")
@@ -27,27 +34,21 @@ export async function login(body: {
   password: string
   role: string | null
 }): Promise<{ token: string; role: string }> {
-  
-  // 🔽 === 這是模擬登入的假資料邏輯 === 🔽
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // 只要帳號不是空白，我們就當作登入成功 (方便你測試)
-      // 你可以根據你在畫面上選擇的面版 (role) 給予對應的權限
-      if (body.employeeId.trim() && body.password.trim()) {
-        resolve({
-          token: "mock-jwt-token-123456789",
-          role: body.role || "employee" 
-        })
-      } else {
-        // 觸發密碼錯誤的提示
-        reject({ code: "INVALID_CREDENTIALS" })
-      }
-    }, 800) // 模擬網路延遲 0.8 秒
-  })
-  
-  /* 
-  // 🔼 等到未來後端 API 做好了，就把上面的 Promise 刪掉，並把下面的真實請求解除註解即可 🔼
-  
+  if (useMock) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const account = MOCK_ACCOUNTS.find(
+          a => a.employeeId === body.employeeId && a.password === body.password
+        )
+        if (account) {
+          resolve({ token: "mock-jwt-token-123456789", role: body.role ?? account.role })
+        } else {
+          reject({ code: "INVALID_CREDENTIALS" })
+        }
+      }, mockDelayMs)
+    })
+  }
+
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -56,25 +57,14 @@ export async function login(body: {
   const json = await res.json()
   if (!res.ok) throw json.error
   return json.data
-  */
-}
-
-export async function getLoginUrl(): Promise<string> {
-  const res = await fetch(`${BASE_URL}/auth/login`)
-  const json = await res.json()
-  return json.data.loginUrl
-}
-
-export async function handleCallback(code: string): Promise<{
-  token: string
-  role: string
-}> {
-  const res = await fetch(`${BASE_URL}/auth/callback?code=${code}`)
-  const json = await res.json()
-  return json.data
 }
 
 export async function logout(): Promise<void> {
+  if (useMock) {
+    removeToken()
+    return
+  }
+
   await fetch(`${BASE_URL}/auth/logout`, {
     method: "POST",
     headers: getAuthHeaders(),
@@ -83,6 +73,13 @@ export async function logout(): Promise<void> {
 }
 
 export async function getMe(): Promise<User> {
+  if (useMock) {
+    const { MOCK_USERS } = await import("../mock/users")
+    return new Promise(resolve =>
+      setTimeout(() => resolve(MOCK_USERS[0] as User), mockDelayMs)
+    )
+  }
+
   const res = await fetch(`${BASE_URL}/me`, {
     headers: getAuthHeaders(),
   })
@@ -99,4 +96,19 @@ export async function getMe(): Promise<User> {
     tags: json.data.tags ?? [],
     preferences: json.data.preferences ?? [],
   }
+}
+
+export async function getLoginUrl(): Promise<string> {
+  const res = await fetch(`${BASE_URL}/auth/login`)
+  const json = await res.json()
+  return json.data.loginUrl
+}
+
+export async function handleCallback(code: string): Promise<{
+  token: string
+  role: string
+}> {
+  const res = await fetch(`${BASE_URL}/auth/callback?code=${code}`)
+  const json = await res.json()
+  return json.data
 }

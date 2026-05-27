@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { MOCK_EVENTS } from "../mock/events"
+import { motion, AnimatePresence } from "framer-motion"
+import { getEvents } from "../api/events"
 import type { Event } from "../types"
 import EventCard from "../components/EventCard"
 import PageTransition from "../components/PageTransition"
 import { EventCardSkeleton } from "../components/Skeleton"
-import { APP_CONFIG } from "../config/app.config"
 
 const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
@@ -77,20 +77,16 @@ function EventListPage() {
   const [sort, setSort] = useState<SortOption>("recommended")
 
   useEffect(() => {
-    setTimeout(() => {
-      setEvents(MOCK_EVENTS)
-      setLoading(false)
-    }, APP_CONFIG.development.mockDelayMs)
-  }, [])
+    setLoading(true)
+    getEvents({ keyword, category })
+      .then(res => {
+        setEvents(res.data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [keyword, category])
 
-  const filtered = sortEvents(
-    events.filter(e => {
-      if (keyword && !e.name.includes(keyword) && !e.description.includes(keyword)) return false
-      if (category && e.category !== category) return false
-      return true
-    }),
-    sort
-  )
+  const filtered = sortEvents(events, sort)
 
   return (
     <PageTransition>
@@ -142,13 +138,22 @@ function EventListPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filtered.map(event => (
-              <EventCard
-                key={event.eventId}
-                event={event}
-                onClick={() => navigate(`/events/${event.eventId}`)}
-              />
-            ))}
+            <AnimatePresence mode="popLayout">
+              {filtered.map((event, index) => (
+                <motion.div
+                  key={event.eventId}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                >
+                  <EventCard
+                    event={event}
+                    onClick={() => navigate(`/events/${event.eventId}`)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

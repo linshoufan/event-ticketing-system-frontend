@@ -1,9 +1,8 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { MOCK_TICKETS } from "../mock/tickets"
-import type { TicketStatus } from "../types"
+import { getTicketById, checkin } from "../api/tickets"
+import type { Ticket, TicketStatus } from "../types"
 import PageTransition from "../components/PageTransition"
-import { APP_CONFIG } from "../config/app.config"
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string }> = {
   unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30" },
@@ -13,23 +12,40 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: st
 
 function TicketDetailPage() {
   const { ticketId } = useParams<{ ticketId: string }>()
-  const [ticket, setTicket] = useState(
-    MOCK_TICKETS.find(t => t.ticketId === ticketId) ?? null
-  )
+  const [ticket, setTicket] = useState<Ticket | null>(null)
+  const [loading, setLoading] = useState(true)
   const [checkingIn, setCheckingIn] = useState(false)
   const [message, setMessage] = useState("")
 
+  useEffect(() => {
+    if (!ticketId) return
+    getTicketById(ticketId)
+      .then(data => {
+        setTicket(data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [ticketId])
+
   async function handleCheckin() {
+    if (!ticketId) return
     setCheckingIn(true)
     setMessage("")
 
     navigator.geolocation.getCurrentPosition(
-      () => {
-        setTimeout(() => {
+      async (pos) => {
+        try {
+          await checkin(ticketId, {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          })
           setMessage("報到成功！")
           if (ticket) setTicket({ ...ticket, status: "used", checkinAvailable: false })
+        } catch (err: any) {
+          setMessage(err?.message ?? "報到失敗，請稍後再試")
+        } finally {
           setCheckingIn(false)
-        }, APP_CONFIG.development.mockActionDelayMs)
+        }
       },
       () => {
         setMessage("無法取得您的位置，請確認已開啟定位權限")
@@ -37,6 +53,10 @@ function TicketDetailPage() {
       }
     )
   }
+
+  if (loading) return (
+    <div className="text-center py-16 text-zinc-500">載入中...</div>
+  )
 
   if (!ticket) return (
     <div className="text-center py-16 text-zinc-500">找不到票券</div>
@@ -87,15 +107,9 @@ function TicketDetailPage() {
               className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-lg transition-colors flex items-center justify-center gap-2"
             >
               {checkingIn ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  定位中...
-                </>
+                <><span className="animate-spin">⏳</span>定位中...</>
               ) : (
-                <>
-                  <span>📍</span>
-                  報到
-                </>
+                <><span>📍</span>報到</>
               )}
             </button>
           ) : (

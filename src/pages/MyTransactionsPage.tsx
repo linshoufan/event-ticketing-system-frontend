@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { MOCK_TRANSACTIONS } from "../mock/transactions"
+import { getTransactions, cancelTransaction } from "../api/transactions"
+import type { Transaction } from "../types"
 import PageTransition from "../components/PageTransition"
 import { TransactionCardSkeleton } from "../components/Skeleton"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
-import { APP_CONFIG } from "../config/app.config"
 
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
@@ -23,26 +23,29 @@ function getDietLabel(diet: string | null) {
 
 function MyTransactionsPage() {
   const navigate = useNavigate()
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | "">("")
   const { toast, showToast } = useToast()
 
   useEffect(() => {
-    setTimeout(() => {
-      setTransactions(MOCK_TRANSACTIONS)
-      setLoading(false)
-    }, APP_CONFIG.development.mockDelayMs)
-  }, [])
+    setLoading(true)
+    getTransactions(statusFilter ? { status: statusFilter } : undefined)
+      .then(res => {
+        setTransactions(res.data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [statusFilter])
 
-  const filtered = transactions.filter(t => {
-    if (statusFilter && t.status !== statusFilter) return false
-    return true
-  })
-
-  function handleCancel(transactionId: string) {
-    setTransactions(prev => prev.filter(tx => tx.transactionId !== transactionId))
-    showToast("取消報名成功", "success")
+  async function handleCancel(transactionId: string) {
+    try {
+      await cancelTransaction(transactionId)
+      setTransactions(prev => prev.filter(tx => tx.transactionId !== transactionId))
+      showToast("取消報名成功", "success")
+    } catch {
+      showToast("取消失敗，請稍後再試", "error")
+    }
   }
 
   return (
@@ -66,14 +69,14 @@ function MyTransactionsPage() {
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => <TransactionCardSkeleton key={i} />)}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : transactions.length === 0 ? (
           <div className="text-center py-16 text-zinc-500">
             <p className="text-4xl mb-3">📋</p>
             <p>沒有報名紀錄</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filtered.map(t => {
+            {transactions.map(t => {
               const config = STATUS_CONFIG[t.status as TransactionStatus]
               return (
                 <div
@@ -101,7 +104,7 @@ function MyTransactionsPage() {
                   </p>
 
                   <div className="flex gap-4 text-sm text-zinc-500 mb-4">
-                    <span>飲食：{getDietLabel(t.dietType as string | null)}</span>
+                    <span>飲食：{getDietLabel(t.dietType)}</span>
                     <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
                     {t.guestCount > 0 && <span>家屬：{t.guestCount} 人</span>}
                   </div>

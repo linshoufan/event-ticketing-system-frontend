@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import { AnimatePresence } from "framer-motion"
 import LoginPage from "./pages/LoginPage"
 import EventListPage from "./pages/EventListPage"
 import EventDetailPage from "./pages/EventDetailPage"
@@ -24,22 +25,24 @@ function Layout() {
   return (
     <>
       {!hideNavbar && <Navbar />}
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/auth/callback" element={<LoginPage />} />
-        <Route path="/events" element={<EventListPage />} />
-        <Route path="/events/:eventId" element={<EventDetailPage />} />
-        <Route path="/my-transactions" element={<MyTransactionsPage />} />
-        <Route path="/my-tickets" element={<MyTicketsPage />} />
-        <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-        <Route path="/admin/events" element={<EventManagePage />} />
-        <Route path="/admin/events/new" element={<CreateEventPage />} />
-        <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-        <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-        <Route path="/admin/users" element={<UserManagePage />} />
-        <Route path="/admin/hr" element={<HRDashboardPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-      </Routes>
+      <AnimatePresence mode="wait">
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<LoginPage />} />
+          <Route path="/events" element={<EventListPage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/my-transactions" element={<MyTransactionsPage />} />
+          <Route path="/my-tickets" element={<MyTicketsPage />} />
+          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
+          <Route path="/admin/events" element={<EventManagePage />} />
+          <Route path="/admin/events/new" element={<CreateEventPage />} />
+          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
+          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
+          <Route path="/admin/users" element={<UserManagePage />} />
+          <Route path="/admin/hr" element={<HRDashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
+      </AnimatePresence>
     </>
   )
 }

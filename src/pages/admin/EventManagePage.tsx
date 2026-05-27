@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { getEvents, deleteEvent, updateEvent } from "../../api/events"
 import type { Event } from "../../types"
-import { MOCK_EVENTS } from "../../mock/events"
 import PageTransition from "../../components/PageTransition"
 import { EventRowSkeleton } from "../../components/Skeleton"
-import { APP_CONFIG } from "../../config/app.config"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   not_open:    { label: "尚未開始報名", color: "text-zinc-400",   bg: "bg-zinc-800" },
@@ -20,21 +19,33 @@ function EventManagePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setTimeout(() => {
-      setEvents(MOCK_EVENTS)
-      setLoading(false)
-    }, APP_CONFIG.development.mockDelayMs)
+    getEvents()
+      .then(res => {
+        setEvents(res.data)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [])
 
   async function handleDelete(eventId: string) {
     if (!confirm("確定要刪除這個活動嗎？")) return
-    setEvents(prev => prev.filter(e => e.eventId !== eventId))
+    try {
+      await deleteEvent(eventId)
+      setEvents(prev => prev.filter(e => e.eventId !== eventId))
+    } catch {
+      alert("刪除失敗，請稍後再試")
+    }
   }
 
   async function handlePublish(eventId: string) {
-    setEvents(prev =>
-      prev.map(e => e.eventId === eventId ? { ...e, isDraft: false } : e)
-    )
+    try {
+      await updateEvent(eventId, { isDraft: false })
+      setEvents(prev =>
+        prev.map(e => e.eventId === eventId ? { ...e, isDraft: false } : e)
+      )
+    } catch {
+      alert("發布失敗，請稍後再試")
+    }
   }
 
   return (

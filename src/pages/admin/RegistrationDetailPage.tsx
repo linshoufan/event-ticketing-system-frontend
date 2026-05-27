@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { MOCK_REGISTRATIONS } from "../../mock/transactions"
+import { getEventRegistrations } from "../../api/events"
 import PageTransition from "../../components/PageTransition"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -15,12 +15,31 @@ function getDietLabel(diet: string | null) {
 }
 
 function RegistrationDetailPage() {
-  const { eventId: _ } = useParams<{ eventId: string }>()
+  const { eventId } = useParams<{ eventId: string }>()
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState("")
 
-  const { summary, registrations } = MOCK_REGISTRATIONS
+  useEffect(() => {
+    if (!eventId) return
+    getEventRegistrations(eventId)
+      .then(res => {
+        setData(res)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [eventId])
 
-  const filtered = registrations.filter(r => {
+  if (loading) return (
+    <div className="text-center py-16 text-zinc-500">載入中...</div>
+  )
+
+  if (!data) return (
+    <div className="text-center py-16 text-zinc-500">載入失敗</div>
+  )
+
+  const { summary, registrations } = data
+  const filtered = registrations.filter((r: any) => {
     if (statusFilter && r.status !== statusFilter) return false
     return true
   })
@@ -32,8 +51,8 @@ function RegistrationDetailPage() {
 
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: "正取", value: summary.totalConfirmed, color: "text-emerald-400" },
-          { label: "候補", value: summary.totalWaitlist,  color: "text-amber-400" },
+          { label: "正取",   value: summary.totalConfirmed, color: "text-emerald-400" },
+          { label: "候補",   value: summary.totalWaitlist,  color: "text-amber-400" },
           { label: "已取消", value: summary.totalCancelled, color: "text-zinc-500" },
         ].map(item => (
           <div key={item.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
@@ -62,7 +81,7 @@ function RegistrationDetailPage() {
           <div className="text-center py-12 text-zinc-500">沒有報名紀錄</div>
         ) : (
           <div className="divide-y divide-zinc-800">
-            {filtered.map(reg => {
+            {filtered.map((reg: any) => {
               const config = STATUS_CONFIG[reg.status] ?? STATUS_CONFIG.cancelled
               return (
                 <div key={reg.transactionId} className="flex items-center gap-4 px-5 py-4">
