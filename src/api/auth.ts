@@ -40,11 +40,19 @@ export async function login(body: {
         const account = MOCK_ACCOUNTS.find(
           a => a.employeeId === body.employeeId && a.password === body.password
         )
-        if (account) {
-          resolve({ token: "mock-jwt-token-123456789", role: body.role ?? account.role })
-        } else {
+
+        if (!account) {
           reject({ code: "INVALID_CREDENTIALS" })
+          return
         }
+
+        // 如果選擇的面板跟帳號的 role 不符，拒絕登入
+        if (body.role && body.role !== account.role) {
+          reject({ code: "ROLE_MISMATCH" })
+          return
+        }
+
+        resolve({ token: "mock-jwt-token-123456789", role: account.role })
       }, mockDelayMs)
     })
   }
