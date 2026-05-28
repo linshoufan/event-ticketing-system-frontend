@@ -5,9 +5,9 @@ const BASE_URL = APP_CONFIG.api.baseUrl
 const { useMock, mockDelayMs } = APP_CONFIG.development
 
 const MOCK_ACCOUNTS = [
-  { employeeId: "W001",    password: "1234", role: "welfare_member" },
-  { employeeId: "E001", password: "1234", role: "employee" },
-  { employeeId: "H001",       password: "1234", role: "hr" },
+  { employeeId: "admin",    password: "1234", role: "welfare_member" },
+  { employeeId: "employee", password: "1234", role: "employee" },
+  { employeeId: "hr",       password: "1234", role: "hr" },
 ]
 
 function getToken(): string | null {
@@ -40,18 +40,14 @@ export async function login(body: {
         const account = MOCK_ACCOUNTS.find(
           a => a.employeeId === body.employeeId && a.password === body.password
         )
-
         if (!account) {
           reject({ code: "INVALID_CREDENTIALS" })
           return
         }
-
-        // 如果選擇的面板跟帳號的 role 不符，拒絕登入
         if (body.role && body.role !== account.role) {
           reject({ code: "ROLE_MISMATCH" })
           return
         }
-
         resolve({ token: "mock-jwt-token-123456789", role: account.role })
       }, mockDelayMs)
     })
@@ -60,7 +56,11 @@ export async function login(body: {
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      employeeId: body.employeeId,
+      password: body.password,
+      role: body.role,
+    }),
   })
   const json = await res.json()
   if (!res.ok) throw json.error
@@ -72,7 +72,6 @@ export async function logout(): Promise<void> {
     removeToken()
     return
   }
-
   await fetch(`${BASE_URL}/auth/logout`, {
     method: "POST",
     headers: getAuthHeaders(),
@@ -87,7 +86,6 @@ export async function getMe(): Promise<User> {
       setTimeout(() => resolve(MOCK_USERS[0] as User), mockDelayMs)
     )
   }
-
   const res = await fetch(`${BASE_URL}/me`, {
     headers: getAuthHeaders(),
   })
@@ -99,24 +97,9 @@ export async function getMe(): Promise<User> {
     role: json.data.role,
     registrationStatus: json.data.registrationStatus,
     unlockAt: json.data.unlockAt,
-    dietType: json.data.dietType,
-    selfDriving: json.data.selfDriving,
-    tags: json.data.tags ?? [],
-    preferences: json.data.preferences ?? [],
+    dietType: json.data.autofill?.dietType ?? null,
+    selfDriving: json.data.autofill?.selfDriving ?? null,
+    tags: json.data.preferences ?? [],
+    preferences: [],
   }
-}
-
-export async function getLoginUrl(): Promise<string> {
-  const res = await fetch(`${BASE_URL}/auth/login`)
-  const json = await res.json()
-  return json.data.loginUrl
-}
-
-export async function handleCallback(code: string): Promise<{
-  token: string
-  role: string
-}> {
-  const res = await fetch(`${BASE_URL}/auth/callback?code=${code}`)
-  const json = await res.json()
-  return json.data
 }
