@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom"
 import { login, saveToken } from "../api/auth"
 import { saveLoginTime } from "../hooks/useAutoLogout"
 import { APP_CONFIG } from "../config/app.config"
+import photo0 from "../assets/photo0.jpg"
 import photo1 from "../assets/photo1.jpg"
 import photo2 from "../assets/photo2.jpg"
 import photo3 from "../assets/photo3.jpg"
 
-const photos = [photo1, photo2, photo3]
+const photos = [photo0,photo1, photo2, photo3]
 const { useMock } = APP_CONFIG.development
 
 type LoginType = "first" | "employee" | "welfare_member" | "hr"
