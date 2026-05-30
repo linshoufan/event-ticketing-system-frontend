@@ -8,7 +8,7 @@ import photo1 from "../assets/photo1.jpg"
 import photo2 from "../assets/photo2.jpg"
 import photo3 from "../assets/photo3.jpg"
 
-const photos = [photo0,photo1, photo2, photo3]
+const photos = [photo1, photo2, photo3,photo0]
 const { useMock } = APP_CONFIG.development
 
 type LoginType = "first" | "employee" | "welfare_member" | "hr"
