@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { MOCK_USERS } from "../../mock/users"
 import PageTransition from "../../components/PageTransition"
 import { UserRowSkeleton } from "../../components/Skeleton"
-import { APP_CONFIG } from "../../config/app.config"
+import { getUsers, updateUserRole, unlockUser, deleteUser } from "../../api/users"
 
 type UserStatus = "active" | "locked"
 
-interface User {
+interface UserListItem {
   userId: string
   username: string
   role: string
@@ -17,44 +16,69 @@ interface User {
 
 function UserManagePage() {
   const navigate = useNavigate()
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [roleFilter, setRoleFilter] = useState("")
+  const [users, setUsers]               = useState<UserListItem[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [roleFilter, setRoleFilter]     = useState("")
   const [statusFilter, setStatusFilter] = useState("")
 
   useEffect(() => {
-    setTimeout(() => {
-      setUsers(MOCK_USERS)
-      setLoading(false)
-    }, APP_CONFIG.development.mockDelayMs)
+    const controller = new AbortController()
+    setLoading(true)
+
+    getUsers(undefined, controller.signal)
+      .then(res => {
+        setUsers(res.data as UserListItem[])
+        setLoading(false)
+      })
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [])
 
   const filtered = users.filter(u => {
-    if (roleFilter && u.role !== roleFilter) return false
+    if (roleFilter   && u.role               !== roleFilter)   return false
     if (statusFilter && u.registrationStatus !== statusFilter) return false
     return true
   })
 
-  function handleUnlock(userId: string) {
+  async function handleUnlock(userId: string) {
     if (!confirm("確定要解鎖這個使用者嗎？")) return
-    setUsers(prev =>
-      prev.map(u =>
-        u.userId === userId
-          ? { ...u, registrationStatus: "active" as UserStatus, unlockAt: null }
-          : u
+    try {
+      await unlockUser(userId)
+      setUsers(prev =>
+        prev.map(u =>
+          u.userId === userId
+            ? { ...u, registrationStatus: "active" as UserStatus, unlockAt: null }
+            : u
+        )
       )
-    )
+    } catch {
+      alert("解鎖失敗，請稍後再試")
+    }
   }
 
-  function handleChangeRole(userId: string, role: string) {
-    setUsers(prev =>
-      prev.map(u => u.userId === userId ? { ...u, role } : u)
-    )
+  async function handleChangeRole(userId: string, role: string) {
+    try {
+      await updateUserRole(userId, role)
+      setUsers(prev =>
+        prev.map(u => u.userId === userId ? { ...u, role } : u)
+      )
+    } catch {
+      alert("角色更新失敗，請稍後再試")
+    }
   }
 
-  function handleDelete(userId: string) {
+  async function handleDelete(userId: string) {
     if (!confirm("確定要刪除這個使用者嗎？")) return
-    setUsers(prev => prev.filter(u => u.userId !== userId))
+    try {
+      await deleteUser(userId)
+      setUsers(prev => prev.filter(u => u.userId !== userId))
+    } catch {
+      alert("刪除失敗，請稍後再試")
+    }
   }
 
   return (

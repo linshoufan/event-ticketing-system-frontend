@@ -29,13 +29,20 @@ function MyTransactionsPage() {
   const { toast, showToast } = useToast()
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
-    getTransactions(statusFilter ? { status: statusFilter } : undefined)
+
+    getTransactions(statusFilter ? { status: statusFilter } : undefined, controller.signal)
       .then(res => {
         setTransactions(res.data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [statusFilter])
 
   async function handleCancel(transactionId: string) {

@@ -1,7 +1,6 @@
 import type { User } from "../types"
 import { APP_CONFIG } from "../config/app.config"
-
-const BASE_URL = APP_CONFIG.api.baseUrl
+const BASE_URL = APP_CONFIG.api.accountUrl
 const { useMock, mockDelayMs } = APP_CONFIG.development
 
 const MOCK_ACCOUNTS = [
@@ -79,21 +78,30 @@ export async function logout(): Promise<void> {
   removeToken()
 }
 
-export async function getMe(): Promise<User> {
+export async function getMe(signal?: AbortSignal): Promise<User> {
   if (useMock) {
     const { MOCK_USERS } = await import("../mock/users")
-    return new Promise(resolve =>
-      setTimeout(() => resolve(MOCK_USERS[0] as User), mockDelayMs)
-    )
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new DOMException("Aborted", "AbortError"))
+        return
+      }
+      const timer = setTimeout(() => resolve(MOCK_USERS[0] as User), mockDelayMs)
+      signal?.addEventListener("abort", () => {
+        clearTimeout(timer)
+        reject(new DOMException("Aborted", "AbortError"))
+      })
+    })
   }
   const res = await fetch(`${BASE_URL}/me`, {
     headers: getAuthHeaders(),
+    signal,
   })
   const json = await res.json()
   return {
     userId: json.data.userId,
     username: json.data.username,
-    email: json.data.email,
+    email: json.data.email ?? "",
     role: json.data.role,
     registrationStatus: json.data.registrationStatus,
     unlockAt: json.data.unlockAt,

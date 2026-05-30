@@ -25,13 +25,21 @@ function CheckinPage() {
 
   useEffect(() => {
     if (!eventId) return
-    getEventTickets(eventId)
+    const controller = new AbortController()
+    setLoading(true)
+
+    getEventTickets(eventId, undefined, controller.signal)
       .then(res => {
         setTickets(res.data.tickets as TicketRecord[])
         setSummary(res.data.summary)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [eventId])
 
   const filtered = tickets.filter(t =>

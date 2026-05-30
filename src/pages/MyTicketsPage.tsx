@@ -18,13 +18,20 @@ function MyTicketsPage() {
   const [filter, setFilter] = useState<TicketStatus | "">("")
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
-    getTickets(filter ? { status: filter } : undefined)
+
+    getTickets(filter ? { status: filter } : undefined, controller.signal)
       .then(data => {
         setTickets(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [filter])
 
   return (

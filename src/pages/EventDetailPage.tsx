@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { getEventById, checkEligibility } from "../api/events"
-import { createTransaction } from "../api/transactions"
+import { getEventById } from "../api/events"
+import { checkEligibility, createTransaction } from "../api/transactions"
 import type { Event } from "../types"
 import PageTransition from "../components/PageTransition"
 import Toast from "../components/Toast"
@@ -32,16 +32,25 @@ function EventDetailPage() {
 
   useEffect(() => {
     if (!eventId) return
+    const controller = new AbortController()
     setLoading(true)
+
     Promise.all([
-      getEventById(eventId),
-      checkEligibility(eventId),
-    ]).then(([ev, elig]) => {
-      setEvent(ev)
-      setEligibility(elig)
-      setAlreadyRegistered(elig.reason === "ALREADY_REGISTERED")
-      setLoading(false)
-    }).catch(() => setLoading(false))
+      getEventById(eventId, controller.signal),
+      checkEligibility(eventId, controller.signal),
+    ])
+      .then(([ev, elig]) => {
+        setEvent(ev)
+        setEligibility(elig)
+        setAlreadyRegistered(elig.reason === "ALREADY_REGISTERED")
+        setLoading(false)
+      })
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [eventId])
 
   async function handleRegisterAction() {
@@ -58,7 +67,19 @@ function EventDetailPage() {
       showToast("報名成功！", "success")
       setAlreadyRegistered(true)
     } catch (err: any) {
-      showToast(err?.message ?? "報名失敗，請稍後再試", "error")
+      const code = err?.code
+      if (code === "ALREADY_REGISTERED") {
+        showToast("您已報名此活動", "info")
+        setAlreadyRegistered(true)
+      } else if (code === "NO_TICKETS") {
+        showToast("名額剛好額滿，已為您加入候補", "info")
+        // 重新確認資格，更新畫面狀態
+        if (eventId) checkEligibility(eventId).then(setEligibility)
+      } else if (code === "ACCOUNT_LOCKED") {
+        showToast("帳號已被鎖定，無法報名", "error")
+      } else {
+        showToast(err?.message ?? "報名失敗，請稍後再試", "error")
+      }
     } finally {
       setRegistering(false)
     }
@@ -199,7 +220,7 @@ function EventDetailPage() {
               <span className="text-zinc-300 text-sm">自行開車</span>
             </label>
 
-            {!event.ticketLimit && (
+            {event.guestAllowed && !event.ticketLimit && (
               <div>
                 <label className="text-zinc-400 text-sm block mb-2">
                   攜帶家屬人數：<span className="text-white font-semibold">{guestCount} 人</span>

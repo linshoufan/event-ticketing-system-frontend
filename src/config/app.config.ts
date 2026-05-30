@@ -1,9 +1,8 @@
-/**
- * 應用程式全域核心組態設定
- */
 export const APP_CONFIG = {
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL ?? "https://api.your-domain.com/v1",
+    accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
+    eventUrl:   import.meta.env.VITE_EVENT_API_URL   ?? "http://localhost:3000/v1",
+    txUrl:      import.meta.env.VITE_TX_API_URL      ?? "http://localhost:8002/v1",
   },
   auth: {
     autoLogoutMinutes: 30,
@@ -14,6 +13,6 @@ export const APP_CONFIG = {
   development: {
     mockDelayMs: 800,
     mockActionDelayMs: 500,
-    useMock: import.meta.env.VITE_USE_MOCK === "true",  // ← 新增
+    useMock: import.meta.env.VITE_USE_MOCK === "true",
   }
 } as const

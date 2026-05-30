@@ -1,4 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getMe } from "../api/auth"
+import { updateUser } from "../api/users"
+import type { User } from "../types"
 import PageTransition from "../components/PageTransition"
 
 const CATEGORIES = [
@@ -11,45 +14,63 @@ const CATEGORIES = [
   { value: "music",   label: "🎵 音樂" },
 ]
 
-const MOCK_PROFILE = {
-  username: "john.doe",
-  email: "john.doe@company.com",
-  role: "employee",
-  registrationStatus: "active",
-  unlockAt: null as string | null,
-  dietType: "non-veg" as "veg" | "non-veg" | null,
-  selfDriving: true,
-  tags: ["sport", "food"],
-  preferences: [
-    {
-      category: "sport",
-      dietType: "non-veg" as "veg" | "non-veg" | null,
-      selfDriving: true,
-      guestCount: 0,
-    }
-  ],
-}
-
 function ProfilePage() {
   const role = localStorage.getItem("role")
 
-  const [tags, setTags] = useState<string[]>(MOCK_PROFILE.tags)
-  const [dietType, setDietType] = useState(MOCK_PROFILE.dietType)
-  const [selfDriving, setSelfDriving] = useState(MOCK_PROFILE.selfDriving ?? false)
-  const [saved, setSaved] = useState(false)
+  const [user, setUser]               = useState<User | null>(null)
+  const [loading, setLoading]         = useState(true)
+  const [loadError, setLoadError]     = useState(false)
+  const [tags, setTags]               = useState<string[]>([])
+  const [dietType, setDietType]       = useState<"veg" | "non-veg" | null>(null)
+  const [selfDriving, setSelfDriving] = useState(false)
+  const [saving, setSaving]           = useState(false)
+  const [saved, setSaved]             = useState(false)
+  const [saveError, setSaveError]     = useState("")
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setLoading(true)
+
+    getMe(controller.signal)
+      .then(data => {
+        setUser(data)
+        setTags(data.tags)
+        setDietType(data.dietType)
+        setSelfDriving(data.selfDriving ?? false)
+        setLoading(false)
+      })
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoadError(true)
+        setLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [])
 
   function toggleTag(tag: string) {
     setTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     )
   }
 
   async function handleSave() {
-    localStorage.setItem("userTags", JSON.stringify(tags))
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    if (!user) return
+    setSaving(true)
+    setSaveError("")
+    try {
+      await updateUser(user.userId, {
+        preferences: tags,
+        autofill: { dietType, selfDriving },
+      })
+      localStorage.setItem("userTags", JSON.stringify(tags))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      setSaveError("儲存失敗，請稍後再試")
+    } finally {
+      setSaving(false)
+    }
   }
 
   function getRoleLabel(r: string | null) {
@@ -57,6 +78,14 @@ function ProfilePage() {
     if (r === "hr") return "HR"
     return "一般員工"
   }
+
+  if (loading) return (
+    <div className="text-center py-16 text-zinc-500">載入中...</div>
+  )
+
+  if (loadError || !user) return (
+    <div className="text-center py-16 text-zinc-500">載入失敗，請重新整理</div>
+  )
 
   return (
     <PageTransition>
@@ -71,8 +100,10 @@ function ProfilePage() {
               👤
             </div>
             <div>
-              <p className="text-white font-semibold">{MOCK_PROFILE.username}</p>
-              <p className="text-zinc-400 text-sm">{MOCK_PROFILE.email}</p>
+              <p className="text-white font-semibold">{user.username}</p>
+              {user.email && (
+                <p className="text-zinc-400 text-sm">{user.email}</p>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between py-3 border-t border-zinc-800">
@@ -81,11 +112,11 @@ function ProfilePage() {
           </div>
           <div className="flex items-center justify-between py-3 border-t border-zinc-800">
             <span className="text-zinc-500 text-sm">報名狀態</span>
-            {MOCK_PROFILE.registrationStatus === "active" ? (
+            {user.registrationStatus === "active" ? (
               <span className="text-xs font-medium px-3 py-1 rounded-full bg-emerald-900/30 text-emerald-400">正常</span>
             ) : (
               <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-900/30 text-red-400">
-                鎖定中（{new Date(MOCK_PROFILE.unlockAt!).toLocaleDateString("zh-TW")} 解鎖）
+                鎖定中{user.unlockAt && `（${new Date(user.unlockAt).toLocaleDateString("zh-TW")} 解鎖）`}
               </span>
             )}
           </div>
@@ -144,11 +175,18 @@ function ProfilePage() {
           </div>
         </div>
 
+        {saveError && (
+          <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-400 text-sm">
+            {saveError}
+          </div>
+        )}
+
         <button
           onClick={handleSave}
-          className="w-full py-3 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 font-semibold transition-colors"
+          disabled={saving}
+          className="w-full py-3 rounded-xl bg-white hover:bg-zinc-100 disabled:opacity-50 text-zinc-900 font-semibold transition-colors"
         >
-          {saved ? "✓ 已儲存" : "儲存"}
+          {saved ? "✓ 已儲存" : saving ? "儲存中..." : "儲存"}
         </button>
       </div>
     </div>

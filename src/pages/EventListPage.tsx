@@ -6,6 +6,7 @@ import type { Event } from "../types"
 import EventCard from "../components/EventCard"
 import PageTransition from "../components/PageTransition"
 import { EventCardSkeleton } from "../components/Skeleton"
+import { useDebounce } from "../hooks/useDebounce"
 
 const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
@@ -72,18 +73,36 @@ function EventListPage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
-  const [keyword, setKeyword] = useState("")
+  const [inputValue, setInputValue] = useState("")   // 顯示在 input 的即時值
+  const [keyword, setKeyword] = useState("")          // 真正打 API 的值（debounced）
   const [category, setCategory] = useState("")
   const [sort, setSort] = useState<SortOption>("recommended")
 
+  // 搜尋框 400ms 後才觸發 API，避免每個字都打一次
+  const debouncedSetKeyword = useDebounce((val: string) => {
+    setKeyword(val)
+  }, 400)
+
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setInputValue(e.target.value)
+    debouncedSetKeyword(e.target.value)
+  }
+
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
-    getEvents({ keyword, category })
+
+    getEvents({ keyword, category }, controller.signal)
       .then(res => {
         setEvents(res.data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return  // 正常取消，不更新 state
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [keyword, category])
 
   const filtered = sortEvents(events, sort)
@@ -96,8 +115,8 @@ function EventListPage() {
         <div className="flex flex-col gap-3 mb-6">
           <input
             placeholder="搜尋活動..."
-            value={keyword}
-            onChange={e => setKeyword(e.target.value)}
+            value={inputValue}
+            onChange={handleSearchChange}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
           />
           <select

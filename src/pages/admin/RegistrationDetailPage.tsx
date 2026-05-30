@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { getEventRegistrations } from "../../api/events"
+import { getEventRegistrations } from "../../api/transactions"
 import PageTransition from "../../components/PageTransition"
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -22,12 +22,20 @@ function RegistrationDetailPage() {
 
   useEffect(() => {
     if (!eventId) return
-    getEventRegistrations(eventId)
+    const controller = new AbortController()
+    setLoading(true)
+
+    getEventRegistrations(eventId, undefined, controller.signal)
       .then(res => {
         setData(res)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [eventId])
 
   if (loading) return (

@@ -19,12 +19,20 @@ function TicketDetailPage() {
 
   useEffect(() => {
     if (!ticketId) return
-    getTicketById(ticketId)
+    const controller = new AbortController()
+    setLoading(true)
+
+    getTicketById(ticketId, controller.signal)
       .then(data => {
         setTicket(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [ticketId])
 
   async function handleCheckin() {

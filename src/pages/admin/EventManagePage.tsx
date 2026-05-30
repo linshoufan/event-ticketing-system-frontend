@@ -19,12 +19,20 @@ function EventManagePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getEvents()
+    const controller = new AbortController()
+    setLoading(true)
+
+    getEvents(undefined, controller.signal)
       .then(res => {
         setEvents(res.data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(err => {
+        if (err.name === "AbortError") return
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [])
 
   async function handleDelete(eventId: string) {
