@@ -88,13 +88,18 @@ export async function createTransaction(body: {
   saveAutofill: boolean
 }) {
   if (useMock) {
-    return delay({
-      transactionId: `tx_${Date.now()}`,
-      status: "confirmed" as const,
-      ticketId: `tk_${Date.now()}`,
-      waitlistNumber: null,
-      registeredAt: new Date().toISOString(),
-    }, mockActionDelayMs)
+    // return delay({
+    //   transactionId: `tx_${Date.now()}`,
+    //   status: "confirmed" as const,
+    //   ticketId: `tk_${Date.now()}`,
+    //   waitlistNumber: null,
+    //   registeredAt: new Date().toISOString(),
+    // }, mockActionDelayMs)
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject({ code: "NO_TICKETS" })
+      }, mockActionDelayMs)
+    })
   }
 
   const res = await fetch(`${BASE_URL}/transactions`, {

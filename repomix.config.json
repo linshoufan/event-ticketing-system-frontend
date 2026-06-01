@@ -1,0 +1,23 @@
+{
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml"
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "node_modules/**",
+      "dist/**",
+      ".env*",
+      "test.txt",
+      "repomix-output.xml",
+      "src/assets/*.jpg",
+      "src/assets/*.png",
+      "src/assets/*.svg",
+      "public/**",
+      "*.lock",
+      "package-lock.json"
+    ]
+  }
+}

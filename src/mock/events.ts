@@ -16,7 +16,7 @@ export const MOCK_EVENTS: Event[] = [
     registrationEnd: "2025-07-01T23:59:59Z",
     status: "registering",
     ticketLimit: 50,
-    remainingTickets: 12,
+    remainingTickets: 1,
     cancellationDeadline: "2025-07-10T00:00:00Z",
     guestAllowed: false,
     guestCount: 0,

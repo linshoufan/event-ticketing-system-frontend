@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
+import { useQuery } from "@tanstack/react-query"
 import { getEvents } from "../api/events"
 import type { Event } from "../types"
 import EventCard from "../components/EventCard"
@@ -71,14 +72,11 @@ function sortEvents(events: Event[], sort: SortOption): Event[] {
 
 function EventListPage() {
   const navigate = useNavigate()
-  const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
-  const [inputValue, setInputValue] = useState("")   // 顯示在 input 的即時值
-  const [keyword, setKeyword] = useState("")          // 真正打 API 的值（debounced）
+  const [inputValue, setInputValue] = useState("")
+  const [keyword, setKeyword] = useState("")
   const [category, setCategory] = useState("")
   const [sort, setSort] = useState<SortOption>("recommended")
 
-  // 搜尋框 400ms 後才觸發 API，避免每個字都打一次
   const debouncedSetKeyword = useDebounce((val: string) => {
     setKeyword(val)
   }, 400)
@@ -88,23 +86,14 @@ function EventListPage() {
     debouncedSetKeyword(e.target.value)
   }
 
-  useEffect(() => {
-    const controller = new AbortController()
-    setLoading(true)
+  // React Query：keyword 或 category 變了自動重新打，3 分鐘內用快取
+  const { data, isLoading } = useQuery({
+    queryKey: ["events", keyword, category],
+    queryFn: ({ signal }) => getEvents({ keyword, category }, signal),
+    staleTime: 1000 * 60 * 3,
+  })
 
-    getEvents({ keyword, category }, controller.signal)
-      .then(res => {
-        setEvents(res.data)
-        setLoading(false)
-      })
-      .catch(err => {
-        if (err.name === "AbortError") return  // 正常取消，不更新 state
-        setLoading(false)
-      })
-
-    return () => controller.abort()
-  }, [keyword, category])
-
+  const events = data?.data ?? []
   const filtered = sortEvents(events, sort)
 
   return (
@@ -146,7 +135,7 @@ function EventListPage() {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => <EventCardSkeleton key={i} />)}
           </div>

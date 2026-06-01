@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import EventListPage from "../../pages/EventListPage"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 vi.mock("../../api/events", () => ({
   getEvents: vi.fn(),
@@ -18,12 +19,17 @@ function controllablePromise<T>() {
 }
 
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   return render(
-    <MemoryRouter>
-      <Routes>
-        <Route path="/" element={<EventListPage />} />
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<EventListPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
   )
 }
 

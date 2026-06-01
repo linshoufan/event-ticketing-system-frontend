@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import EventDetailPage from "../../pages/EventDetailPage"
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 // Mock API 模組
 vi.mock("../../api/events", () => ({
   getEventById: vi.fn(),
@@ -36,13 +36,18 @@ const mockEvent = {
   isDraft: false,
 }
 
-function renderPage() {
+function renderPage(eventId = "ev_001") {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
   return render(
-    <MemoryRouter initialEntries={["/events/ev_001"]}>
-      <Routes>
-        <Route path="/events/:eventId" element={<EventDetailPage />} />
-      </Routes>
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[`/events/${eventId}`]}>
+        <Routes>
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
   )
 }
 

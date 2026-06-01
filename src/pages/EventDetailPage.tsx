@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { getEventById } from "../api/events"
 import { checkEligibility, createTransaction } from "../api/transactions"
 import type { Event } from "../types"
@@ -19,39 +20,37 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const { toast, showToast } = useToast()
+  const queryClient = useQueryClient()
 
-  const [event, setEvent] = useState<Event | null>(null)
-  const [eligibility, setEligibility] = useState<any>(null)
   const [alreadyRegistered, setAlreadyRegistered] = useState(false)
-  const [loading, setLoading] = useState(true)
-
   const [dietType, setDietType] = useState<"veg" | "non-veg" | null>(null)
   const [selfDriving, setSelfDriving] = useState(false)
   const [guestCount, setGuestCount] = useState(0)
   const [registering, setRegistering] = useState(false)
+  const [waitlisted, setWaitlisted] = useState(false)
+  
+  // 活動資料：5 分鐘內用快取
+  const { data: event, isLoading: eventLoading } = useQuery<Event>({
+    queryKey: ["event", eventId],
+    queryFn: ({ signal }) => getEventById(eventId!, signal),
+    enabled: !!eventId,
+    staleTime: 1000 * 60 * 5,
+  })
 
+  // 報名資格：每次都重新確認（staleTime: 0）
+  const { data: eligibility, refetch: refetchEligibility } = useQuery({
+    queryKey: ["eligibility", eventId],
+    queryFn: ({ signal }) => checkEligibility(eventId!, signal),
+    enabled: !!eventId,
+    staleTime: 0,
+  })
+
+  // onSuccess 在 v5 移除，改用 useEffect
   useEffect(() => {
-    if (!eventId) return
-    const controller = new AbortController()
-    setLoading(true)
-
-    Promise.all([
-      getEventById(eventId, controller.signal),
-      checkEligibility(eventId, controller.signal),
-    ])
-      .then(([ev, elig]) => {
-        setEvent(ev)
-        setEligibility(elig)
-        setAlreadyRegistered(elig.reason === "ALREADY_REGISTERED")
-        setLoading(false)
-      })
-      .catch(err => {
-        if (err.name === "AbortError") return
-        setLoading(false)
-      })
-
-    return () => controller.abort()
-  }, [eventId])
+    if (eligibility?.reason === "ALREADY_REGISTERED") {
+      setAlreadyRegistered(true)
+    }
+  }, [eligibility])
 
   async function handleRegisterAction() {
     if (!eventId || registering) return
@@ -66,6 +65,12 @@ function EventDetailPage() {
       })
       showToast("報名成功！", "success")
       setAlreadyRegistered(true)
+
+      // 報名成功後讓相關快取失效，確保資料最新
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] })
+      queryClient.invalidateQueries({ queryKey: ["eligibility", eventId] })
+      queryClient.invalidateQueries({ queryKey: ["events"] })
+
     } catch (err: any) {
       const code = err?.code
       if (code === "ALREADY_REGISTERED") {
@@ -73,8 +78,8 @@ function EventDetailPage() {
         setAlreadyRegistered(true)
       } else if (code === "NO_TICKETS") {
         showToast("名額剛好額滿，已為您加入候補", "info")
-        // 重新確認資格，更新畫面狀態
-        if (eventId) checkEligibility(eventId).then(setEligibility)
+        setWaitlisted(true) //
+        refetchEligibility()
       } else if (code === "ACCOUNT_LOCKED") {
         showToast("帳號已被鎖定，無法報名", "error")
       } else {
@@ -97,7 +102,13 @@ function EventDetailPage() {
         </div>
       )
     }
-
+    if (waitlisted) {
+      return (
+        <div className="bg-amber-900/30 border border-amber-800 rounded-xl px-4 py-3 text-amber-400 text-sm text-center">
+          已加入候補名單
+        </div>
+      )
+    }
     if (event.status === "registering") {
       return (
         <button
@@ -129,7 +140,7 @@ function EventDetailPage() {
     )
   }
 
-  if (loading) return (
+  if (eventLoading) return (
     <div className="text-center py-16 text-zinc-500">載入中...</div>
   )
 

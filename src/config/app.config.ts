@@ -10,9 +10,10 @@ export const APP_CONFIG = {
     roleKey: "role",
     expiryKey: "tokenExpiry",
   },
+  // src/config/app.config.ts
   development: {
     mockDelayMs: 800,
-    mockActionDelayMs: 500,
+    mockActionDelayMs: 3000,  // 報名中維持 3 秒
     useMock: import.meta.env.VITE_USE_MOCK === "true",
   }
 } as const
