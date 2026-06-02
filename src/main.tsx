@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import * as Sentry from "@sentry/react"
+import { Analytics } from "@vercel/analytics/react"
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -28,6 +29,15 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+    </QueryClientProvider>
+  </StrictMode>
+)
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <Analytics />  // ← 加這行
     </QueryClientProvider>
   </StrictMode>
 )
