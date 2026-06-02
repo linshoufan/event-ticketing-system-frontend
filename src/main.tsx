@@ -9,8 +9,8 @@ import { Analytics } from "@vercel/analytics/react"
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE,
-  enabled: !!import.meta.env.VITE_SENTRY_DSN,  // 沒填 DSN 就不啟動
-  tracesSampleRate: 0.1,  // 10% 的請求追蹤效能
+  enabled: !!import.meta.env.VITE_SENTRY_DSN,
+  tracesSampleRate: 0.1,
   integrations: [
     Sentry.browserTracingIntegration(),
   ],
@@ -29,15 +29,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
-    </QueryClientProvider>
-  </StrictMode>
-)
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-      <Analytics />  // ← 加這行
+      <Analytics />
     </QueryClientProvider>
   </StrictMode>
 )

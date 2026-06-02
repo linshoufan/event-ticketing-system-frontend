@@ -122,186 +122,6 @@ vite.config.ts
 <files>
 This section contains the contents of the repository's files.
 
-<file path="src/tests/highTraffic/raceCondition.test.tsx">
-import { render, screen, waitFor } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { vi, describe, it, expect, beforeEach } from "vitest"
-import { MemoryRouter, Route, Routes } from "react-router-dom"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import EventDetailPage from "../../pages/EventDetailPage"
-
-vi.mock("../../api/events", () => ({ getEventById: vi.fn() }))
-vi.mock("../../api/transactions", () => ({
-  checkEligibility: vi.fn(),
-  createTransaction: vi.fn(),
-}))
-
-import { getEventById } from "../../api/events"
-import { checkEligibility, createTransaction } from "../../api/transactions"
-
-const mockEvent = {
-  eventId: "ev_001",
-  name: "夏日烤肉趴",
-  description: "部門聯誼",
-  category: "sport",
-  location: "台北辦公室頂樓",
-  latitude: 25.0478, longitude: 121.5319,
-  checkinRadiusMeters: 200,
-  eventStartTime: "2025-07-15T18:00:00Z",
-  eventEndTime: "2025-07-15T22:00:00Z",
-  registrationStart: "2025-06-01T00:00:00Z",
-  registrationEnd: "2025-07-01T23:59:59Z",
-  status: "registering" as const,
-  ticketLimit: 1,        // ← 只剩一張票
-  remainingTickets: 1,
-  cancellationDeadline: "2025-07-10T00:00:00Z",
-  guestAllowed: false, guestCount: 0,
-  updatedAt: "2025-05-18T10:00:00Z",
-  isDraft: false,
-}
-
-function renderPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        refetchOnWindowFocus: false,  // ← 加這個
-      },
-    },
-  })
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={["/events/ev_001"]}>
-        <Routes>
-          <Route path="/events/:eventId" element={<EventDetailPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>
-  )
-}
-
-describe("票券競態條件", () => {
-  beforeEach(() => {
-    vi.mocked(getEventById).mockResolvedValue(mockEvent)
-  })
-
-  it("查詢時有票，送出時已被搶走（NO_TICKETS），顯示候補提示", async () => {
-    const user = userEvent.setup()
-
-    // 查詢時顯示還有 1 張票
-    vi.mocked(checkEligibility).mockResolvedValue({
-      eligible: true,
-      reason: null,
-      remainingTickets: 1,
-      isWaitlist: false,
-    })
-
-    // 但送出時已被別人搶走
-    vi.mocked(createTransaction).mockRejectedValue({ code: "NO_TICKETS" })
-
-    renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
-
-    // 使用者看到有票，點了報名
-    await user.click(screen.getByText("立即報名"))
-    await new Promise(resolve => setTimeout(resolve, 600))
-
-    // 應該顯示候補提示，不是「報名失敗」
-    await waitFor(() => {
-      expect(screen.getByText(/名額.*滿.*候補/)).toBeInTheDocument()
-    })
-  })
-
-  it("最後一張票被搶走後，eligibility 重新查詢會更新剩餘票數", async () => {
-    const user = userEvent.setup()
-
-    vi.mocked(checkEligibility)
-      .mockResolvedValueOnce({
-        eligible: true, reason: null,
-        remainingTickets: 1, isWaitlist: false,
-      })
-      .mockResolvedValueOnce({
-        // 第二次查詢（NO_TICKETS 後 refetch）票已經是 0
-        eligible: true, reason: null,
-        remainingTickets: 0, isWaitlist: true,
-      })
-
-    vi.mocked(createTransaction).mockRejectedValue({ code: "NO_TICKETS" })
-
-    renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
-
-    await user.click(screen.getByText("立即報名"))
-    await new Promise(resolve => setTimeout(resolve, 600))
-
-    // checkEligibility 要被呼叫兩次（初始 + refetch）
-    await waitFor(() => {
-      expect(vi.mocked(checkEligibility).mock.calls.length).toBeGreaterThanOrEqual(2)
-    })
-  })
-
-  it("送出中按鈕 disabled，防止重複送出", async () => {
-  const user = userEvent.setup()
-
-  vi.mocked(checkEligibility).mockResolvedValue({
-    eligible: true, reason: null,
-    remainingTickets: 1, isWaitlist: false,
-  })
-
-  vi.mocked(createTransaction).mockImplementation(
-    () => new Promise(resolve => setTimeout(() =>
-      resolve({
-        transactionId: "tx_001",
-        status: "confirmed" as const,
-        ticketId: "tk_001",
-        waitlistNumber: null,
-        registeredAt: new Date().toISOString(),
-      }),
-    2000))
-  )
-
-  renderPage()
-  await waitFor(() => screen.getByText("立即報名"))
-
-  await user.click(screen.getByText("立即報名"))
-  await new Promise(resolve => setTimeout(resolve, 600))
-
-  // 最重要的驗證：按鈕變 disabled，使用者看到「報名中...」
-  await waitFor(() => {
-    const button = screen.queryByText("報名中...")
-    expect(button).not.toBeNull()
-    expect(button).toBeDisabled()
-  })
-})
-})
-</file>
-
-<file path="repomix.config.json">
-{
-  "output": {
-    "filePath": "repomix-output.xml",
-    "style": "xml"
-  },
-  "ignore": {
-    "useGitignore": true,
-    "useDefaultPatterns": true,
-    "customPatterns": [
-      "node_modules/**",
-      "dist/**",
-      ".env*",
-      "test.txt",
-      "repomix-output.xml",
-      "src/assets/*.jpg",
-      "src/assets/*.png",
-      "src/assets/*.svg",
-      "public/**",
-      "*.lock",
-      "package-lock.json"
-    ]
-  }
-}
-</file>
-
 <file path="src/api/fetchWithRetry.ts">
 export async function fetchWithRetry(
   url: string,
@@ -626,114 +446,6 @@ export function useToast() {
 }
 </file>
 
-<file path="src/tests/highTraffic/abort.test.tsx">
-import { render, screen, waitFor, act } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { vi, describe, it, expect, beforeEach } from "vitest"
-import { MemoryRouter, Route, Routes } from "react-router-dom"
-import EventListPage from "../../pages/EventListPage"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-
-vi.mock("../../api/events", () => ({
-  getEvents: vi.fn(),
-}))
-
-import { getEvents } from "../../api/events"
-
-// 可手動控制的 Promise（模擬慢速 API）
-function controllablePromise<T>() {
-  let resolve!: (v: T) => void
-  const promise = new Promise<T>(res => { resolve = res })
-  return { promise, resolve }
-}
-
-function renderPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  })
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <Routes>
-          <Route path="/" element={<EventListPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>
-  )
-}
-
-describe("AbortController — 避免舊請求蓋掉新結果", () => {
-  beforeEach(() => {
-    vi.mocked(getEvents).mockResolvedValue({
-      data: [], pagination: { page: 1, limit: 10, total: 0 },
-    })
-  })
-
-  it("切換分類時，前一個請求要被取消（signal.aborted）", async () => {
-    const user = userEvent.setup()
-    let firstSignal: AbortSignal | undefined
-    let callCount = 0
-
-    vi.mocked(getEvents).mockImplementation(async (_params, signal) => {
-        callCount++
-        // ✅ 只存第一次呼叫的 signal
-        if (callCount === 1) {
-        firstSignal = signal
-        }
-        // ✅ 延遲拉長到 300ms，確保第一次請求還在跑時被取消
-        await new Promise(resolve => setTimeout(resolve, 300))
-        return { data: [], pagination: { page: 1, limit: 10, total: 0 } }
-    })
-
-    renderPage()
-    await waitFor(() => screen.getByRole("combobox"))
-
-    // 切換分類，觸發第二次 getEvents，同時取消第一次
-    await user.selectOptions(screen.getByRole("combobox"), "sport")
-
-    // ✅ 驗證第一次請求的 signal 被 abort
-    await waitFor(() => {
-        expect(firstSignal?.aborted).toBe(true)
-    })
-    })
-
-  it("搜尋時快速輸入，只有最後一次輸入的請求完成", async () => {
-    const user = userEvent.setup()
-
-    const { promise: slow, resolve: resolveSlow } = controllablePromise<any>()
-    const { promise: fast, resolve: resolveFast } = controllablePromise<any>()
-
-    let callCount = 0
-    vi.mocked(getEvents).mockImplementation(() => {
-      callCount++
-      return callCount === 1 ? slow : fast
-    })
-
-    renderPage()
-    const input = await screen.findByPlaceholderText("搜尋活動...")
-
-    // 快速輸入（debounce 內）
-    await user.type(input, "烤")
-    await user.type(input, "肉") // 前一個 debounce 被重置
-
-    // 只讓最後一次的請求完成
-    act(() => {
-      resolveFast({ data: [{ eventId: "ev_001", name: "夏日烤肉趴" }], pagination: { page: 1, limit: 1, total: 1 } })
-    })
-
-    // 舊的慢速請求（即使完成）不應該影響畫面
-    act(() => {
-      resolveSlow({ data: [{ eventId: "ev_999", name: "舊的結果" }], pagination: { page: 1, limit: 1, total: 1 } })
-    })
-
-    // 畫面只顯示最後一次的結果
-    await waitFor(() => {
-      expect(screen.queryByText("舊的結果")).not.toBeInTheDocument()
-    })
-  })
-})
-</file>
-
 <file path="src/tests/highTraffic/debounce.test.ts">
 import { renderHook, act } from "@testing-library/react"
 import { vi, describe, it, expect, afterEach } from "vitest"
@@ -797,17 +509,15 @@ describe("useDebounce — 防重複點擊", () => {
 })
 </file>
 
-<file path="src/tests/highTraffic/register.test.tsx">
+<file path="src/tests/highTraffic/raceCondition.test.tsx">
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
-import EventDetailPage from "../../pages/EventDetailPage"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-// Mock API 模組
-vi.mock("../../api/events", () => ({
-  getEventById: vi.fn(),
-}))
+import EventDetailPage from "../../pages/EventDetailPage"
+
+vi.mock("../../api/events", () => ({ getEventById: vi.fn() }))
 vi.mock("../../api/transactions", () => ({
   checkEligibility: vi.fn(),
   createTransaction: vi.fn(),
@@ -829,20 +539,26 @@ const mockEvent = {
   registrationStart: "2025-06-01T00:00:00Z",
   registrationEnd: "2025-07-01T23:59:59Z",
   status: "registering" as const,
-  ticketLimit: 50, remainingTickets: 12,
+  ticketLimit: 1,        // ← 只剩一張票
+  remainingTickets: 1,
   cancellationDeadline: "2025-07-10T00:00:00Z",
   guestAllowed: false, guestCount: 0,
   updatedAt: "2025-05-18T10:00:00Z",
   isDraft: false,
 }
 
-function renderPage(eventId = "ev_001") {
+function renderPage() {
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: {
+      queries: {
+        retry: false,
+        refetchOnWindowFocus: false,  // ← 加這個
+      },
+    },
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`/events/${eventId}`]}>
+      <MemoryRouter initialEntries={["/events/ev_001"]}>
         <Routes>
           <Route path="/events/:eventId" element={<EventDetailPage />} />
         </Routes>
@@ -851,85 +567,99 @@ function renderPage(eventId = "ev_001") {
   )
 }
 
-    describe("多人搶票競態處理", () => {
-    beforeEach(() => {
-        vi.mocked(getEventById).mockResolvedValue(mockEvent)
-        vi.mocked(checkEligibility).mockResolvedValue({
-        eligible: true, reason: null,
-        remainingTickets: 12, isWaitlist: false,
-        })
+describe("票券競態條件", () => {
+  beforeEach(() => {
+    vi.mocked(getEventById).mockResolvedValue(mockEvent)
+  })
+
+  it("查詢時有票，送出時已被搶走（NO_TICKETS），顯示候補提示", async () => {
+    const user = userEvent.setup()
+
+    // 查詢時顯示還有 1 張票
+    vi.mocked(checkEligibility).mockResolvedValue({
+      eligible: true,
+      reason: null,
+      remainingTickets: 1,
+      isWaitlist: false,
     })
 
-    it("快速點擊報名按鈕多次，API 只被呼叫一次", async () => {
-    const user = userEvent.setup()
-    vi.mocked(createTransaction).mockImplementation(
-        () => new Promise(resolve => setTimeout(() =>
-        resolve({ transactionId: "tx_001", status: "confirmed", ticketId: "tk_001", waitlistNumber: null, registeredAt: new Date().toISOString() }),
-        1000))
-    )
+    // 但送出時已被別人搶走
+    vi.mocked(createTransaction).mockRejectedValue({ code: "NO_TICKETS" })
 
     renderPage()
     await waitFor(() => screen.getByText("立即報名"))
 
-    const button = screen.getByText("立即報名")
-
-    await user.click(button)
-    await user.click(button)
-    await user.click(button)
-
-    // ✅ 等 debounce 500ms 跑完
+    // 使用者看到有票，點了報名
+    await user.click(screen.getByText("立即報名"))
     await new Promise(resolve => setTimeout(resolve, 600))
 
-    expect(createTransaction).toHaveBeenCalledTimes(1)
-    expect(button).toBeDisabled()
-    })
-
-  it("票被搶走（NO_TICKETS 409），顯示候補提示並更新狀態", async () => {
-    const user = userEvent.setup()
-    vi.mocked(createTransaction).mockRejectedValue({ code: "NO_TICKETS" })
-    vi.mocked(checkEligibility)
-      .mockResolvedValueOnce({ eligible: true, reason: null, remainingTickets: 1, isWaitlist: false })
-      .mockResolvedValueOnce({ eligible: true, reason: null, remainingTickets: 0, isWaitlist: true })
-
-    renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
-
-    await user.click(screen.getByText("立即報名"))
-
+    // 應該顯示候補提示，不是「報名失敗」
     await waitFor(() => {
       expect(screen.getByText(/名額.*滿.*候補/)).toBeInTheDocument()
     })
   })
 
-  it("帳號被鎖定（ACCOUNT_LOCKED 409），顯示鎖定提示", async () => {
+  it("最後一張票被搶走後，eligibility 重新查詢會更新剩餘票數", async () => {
     const user = userEvent.setup()
-    vi.mocked(createTransaction).mockRejectedValue({ code: "ACCOUNT_LOCKED" })
+
+    vi.mocked(checkEligibility)
+      .mockResolvedValueOnce({
+        eligible: true, reason: null,
+        remainingTickets: 1, isWaitlist: false,
+      })
+      .mockResolvedValueOnce({
+        // 第二次查詢（NO_TICKETS 後 refetch）票已經是 0
+        eligible: true, reason: null,
+        remainingTickets: 0, isWaitlist: true,
+      })
+
+    vi.mocked(createTransaction).mockRejectedValue({ code: "NO_TICKETS" })
 
     renderPage()
     await waitFor(() => screen.getByText("立即報名"))
 
     await user.click(screen.getByText("立即報名"))
+    await new Promise(resolve => setTimeout(resolve, 600))
 
+    // checkEligibility 要被呼叫兩次（初始 + refetch）
     await waitFor(() => {
-      expect(screen.getByText(/帳號已被鎖定/)).toBeInTheDocument()
+      expect(vi.mocked(checkEligibility).mock.calls.length).toBeGreaterThanOrEqual(2)
     })
   })
 
-  it("已報名再點一次（ALREADY_REGISTERED 409），畫面更新為已報名狀態", async () => {
-    const user = userEvent.setup()
-    vi.mocked(createTransaction).mockRejectedValue({ code: "ALREADY_REGISTERED" })
+  it("送出中按鈕 disabled，防止重複送出", async () => {
+  const user = userEvent.setup()
 
-    renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
+  vi.mocked(checkEligibility).mockResolvedValue({
+    eligible: true, reason: null,
+    remainingTickets: 1, isWaitlist: false,
+  })
 
-    await user.click(screen.getByText("立即報名"))
+  vi.mocked(createTransaction).mockImplementation(
+    () => new Promise(resolve => setTimeout(() =>
+      resolve({
+        transactionId: "tx_001",
+        status: "confirmed" as const,
+        ticketId: "tk_001",
+        waitlistNumber: null,
+        registeredAt: new Date().toISOString(),
+      }),
+    2000))
+  )
 
-    await waitFor(() => {
-        // ✅ 用 getAllByText，因為按鈕區和 Toast 都會顯示這段文字
-        const elements = screen.getAllByText("您已報名此活動")
-        expect(elements.length).toBeGreaterThanOrEqual(1)
-    })
-    })
+  renderPage()
+  await waitFor(() => screen.getByText("立即報名"))
+
+  await user.click(screen.getByText("立即報名"))
+  await new Promise(resolve => setTimeout(resolve, 600))
+
+  // 最重要的驗證：按鈕變 disabled，使用者看到「報名中...」
+  await waitFor(() => {
+    const button = screen.queryByText("報名中...")
+    expect(button).not.toBeNull()
+    expect(button).toBeDisabled()
+  })
+})
 })
 </file>
 
@@ -1120,42 +850,6 @@ function renderPage(eventId = "ev_001") {
 }
 </file>
 
-<file path="src/main.tsx">
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import * as Sentry from "@sentry/react"
-
-Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: import.meta.env.MODE,
-  enabled: !!import.meta.env.VITE_SENTRY_DSN,  // 沒填 DSN 就不啟動
-  tracesSampleRate: 0.1,  // 10% 的請求追蹤效能
-  integrations: [
-    Sentry.browserTracingIntegration(),
-  ],
-})
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      retry: 2,
-    },
-  },
-})
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </StrictMode>
-)
-</file>
-
 <file path="src/vite-env.d.ts">
 /// <reference types="vite/client" />
 
@@ -1237,6 +931,32 @@ export default defineConfig([
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+</file>
+
+<file path="repomix.config.json">
+{
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml"
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "node_modules/**",
+      "dist/**",
+      ".env*",
+      "test.txt",
+      "repomix-output.xml",
+      "src/assets/*.jpg",
+      "src/assets/*.png",
+      "src/assets/*.svg",
+      "public/**",
+      "*.lock",
+      "package-lock.json"
+    ]
+  }
+}
 </file>
 
 <file path="tsconfig.app.json">
@@ -1840,6 +1560,250 @@ describe("Navbar - 導航功能", () => {
     await userEvent.click(screen.getByText("活動管理"))
     expect(mockNavigate).toHaveBeenCalledWith("/admin/events")
   })
+})
+</file>
+
+<file path="src/tests/highTraffic/abort.test.tsx">
+import { render, screen, waitFor, act } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { vi, describe, it, expect, beforeEach } from "vitest"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
+import EventListPage from "../../pages/EventListPage"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+
+vi.mock("../../api/events", () => ({
+  getEvents: vi.fn(),
+}))
+
+import { getEvents } from "../../api/events"
+
+// 可手動控制的 Promise（模擬慢速 API）
+function controllablePromise<T>() {
+  let resolve!: (v: T) => void
+  const promise = new Promise<T>(res => { resolve = res })
+  return { promise, resolve }
+}
+
+function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<EventListPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+describe("AbortController — 避免舊請求蓋掉新結果", () => {
+  beforeEach(() => {
+    vi.mocked(getEvents).mockResolvedValue({
+      data: [], pagination: { page: 1, limit: 10, total: 0 },
+    })
+  })
+
+  it("切換分類時，前一個請求要被取消（signal.aborted）", async () => {
+    const user = userEvent.setup()
+    let firstSignal: AbortSignal | undefined
+    let callCount = 0
+
+    vi.mocked(getEvents).mockImplementation(async (_params, signal) => {
+        callCount++
+        // ✅ 只存第一次呼叫的 signal
+        if (callCount === 1) {
+        firstSignal = signal
+        }
+        // ✅ 延遲拉長到 300ms，確保第一次請求還在跑時被取消
+        await new Promise(resolve => setTimeout(resolve, 300))
+        return { data: [], pagination: { page: 1, limit: 10, total: 0 } }
+    })
+
+    renderPage()
+    await waitFor(() => screen.getByRole("combobox"))
+
+    // 切換分類，觸發第二次 getEvents，同時取消第一次
+    await user.selectOptions(screen.getByRole("combobox"), "sport")
+
+    // ✅ 驗證第一次請求的 signal 被 abort
+    await waitFor(() => {
+        expect(firstSignal?.aborted).toBe(true)
+    })
+    })
+
+  it("搜尋時快速輸入，只有最後一次輸入的請求完成", async () => {
+    const user = userEvent.setup()
+
+    const { promise: slow, resolve: resolveSlow } = controllablePromise<any>()
+    const { promise: fast, resolve: resolveFast } = controllablePromise<any>()
+
+    let callCount = 0
+    vi.mocked(getEvents).mockImplementation(() => {
+      callCount++
+      return callCount === 1 ? slow : fast
+    })
+
+    renderPage()
+    const input = await screen.findByPlaceholderText("搜尋活動...")
+
+    // 快速輸入（debounce 內）
+    await user.type(input, "烤")
+    await user.type(input, "肉") // 前一個 debounce 被重置
+
+    // 只讓最後一次的請求完成
+    act(() => {
+      resolveFast({ data: [{ eventId: "ev_001", name: "夏日烤肉趴" }], pagination: { page: 1, limit: 1, total: 1 } })
+    })
+
+    // 舊的慢速請求（即使完成）不應該影響畫面
+    act(() => {
+      resolveSlow({ data: [{ eventId: "ev_999", name: "舊的結果" }], pagination: { page: 1, limit: 1, total: 1 } })
+    })
+
+    // 畫面只顯示最後一次的結果
+    await waitFor(() => {
+      expect(screen.queryByText("舊的結果")).not.toBeInTheDocument()
+    })
+  })
+})
+</file>
+
+<file path="src/tests/highTraffic/register.test.tsx">
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { vi, describe, it, expect, beforeEach } from "vitest"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
+import EventDetailPage from "../../pages/EventDetailPage"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+// Mock API 模組
+vi.mock("../../api/events", () => ({
+  getEventById: vi.fn(),
+}))
+vi.mock("../../api/transactions", () => ({
+  checkEligibility: vi.fn(),
+  createTransaction: vi.fn(),
+}))
+
+import { getEventById } from "../../api/events"
+import { checkEligibility, createTransaction } from "../../api/transactions"
+
+const mockEvent = {
+  eventId: "ev_001",
+  name: "夏日烤肉趴",
+  description: "部門聯誼",
+  category: "sport",
+  location: "台北辦公室頂樓",
+  latitude: 25.0478, longitude: 121.5319,
+  checkinRadiusMeters: 200,
+  eventStartTime: "2025-07-15T18:00:00Z",
+  eventEndTime: "2025-07-15T22:00:00Z",
+  registrationStart: "2025-06-01T00:00:00Z",
+  registrationEnd: "2025-07-01T23:59:59Z",
+  status: "registering" as const,
+  ticketLimit: 50, remainingTickets: 12,
+  cancellationDeadline: "2025-07-10T00:00:00Z",
+  guestAllowed: false, guestCount: 0,
+  updatedAt: "2025-05-18T10:00:00Z",
+  isDraft: false,
+}
+
+function renderPage(eventId = "ev_001") {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[`/events/${eventId}`]}>
+        <Routes>
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+    describe("多人搶票競態處理", () => {
+    beforeEach(() => {
+        vi.mocked(getEventById).mockResolvedValue(mockEvent)
+        vi.mocked(checkEligibility).mockResolvedValue({
+        eligible: true, reason: null,
+        remainingTickets: 12, isWaitlist: false,
+        })
+    })
+
+    it("快速點擊報名按鈕多次，API 只被呼叫一次", async () => {
+    const user = userEvent.setup()
+    vi.mocked(createTransaction).mockImplementation(
+        () => new Promise(resolve => setTimeout(() =>
+        resolve({ transactionId: "tx_001", status: "confirmed", ticketId: "tk_001", waitlistNumber: null, registeredAt: new Date().toISOString() }),
+        1000))
+    )
+
+    renderPage()
+    await waitFor(() => screen.getByText("立即報名"))
+
+    const button = screen.getByText("立即報名")
+
+    await user.click(button)
+    await user.click(button)
+    await user.click(button)
+
+    // ✅ 等 debounce 500ms 跑完
+    await new Promise(resolve => setTimeout(resolve, 600))
+
+    expect(createTransaction).toHaveBeenCalledTimes(1)
+    expect(button).toBeDisabled()
+    })
+
+  it("票被搶走（NO_TICKETS 409），顯示候補提示並更新狀態", async () => {
+    const user = userEvent.setup()
+    vi.mocked(createTransaction).mockRejectedValue({ code: "NO_TICKETS" })
+    vi.mocked(checkEligibility)
+      .mockResolvedValueOnce({ eligible: true, reason: null, remainingTickets: 1, isWaitlist: false })
+      .mockResolvedValueOnce({ eligible: true, reason: null, remainingTickets: 0, isWaitlist: true })
+
+    renderPage()
+    await waitFor(() => screen.getByText("立即報名"))
+
+    await user.click(screen.getByText("立即報名"))
+
+    await waitFor(() => {
+      expect(screen.getByText(/名額.*滿.*候補/)).toBeInTheDocument()
+    })
+  })
+
+  it("帳號被鎖定（ACCOUNT_LOCKED 409），顯示鎖定提示", async () => {
+    const user = userEvent.setup()
+    vi.mocked(createTransaction).mockRejectedValue({ code: "ACCOUNT_LOCKED" })
+
+    renderPage()
+    await waitFor(() => screen.getByText("立即報名"))
+
+    await user.click(screen.getByText("立即報名"))
+
+    await waitFor(() => {
+      expect(screen.getByText(/帳號已被鎖定/)).toBeInTheDocument()
+    })
+  })
+
+  it("已報名再點一次（ALREADY_REGISTERED 409），畫面更新為已報名狀態", async () => {
+    const user = userEvent.setup()
+    vi.mocked(createTransaction).mockRejectedValue({ code: "ALREADY_REGISTERED" })
+
+    renderPage()
+    await waitFor(() => screen.getByText("立即報名"))
+
+    await user.click(screen.getByText("立即報名"))
+
+    await waitFor(() => {
+        // ✅ 用 getAllByText，因為按鈕區和 Toast 都會顯示這段文字
+        const elements = screen.getAllByText("您已報名此活動")
+        expect(elements.length).toBeGreaterThanOrEqual(1)
+    })
+    })
 })
 </file>
 
@@ -2544,341 +2508,6 @@ export interface ApiError {
 }
 </file>
 
-<file path="README.md">
-# React + TypeScript + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-</file>
-
-<file path="src/config/app.config.ts">
-export const APP_CONFIG = {
-  api: {
-    accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
-    eventUrl:   import.meta.env.VITE_EVENT_API_URL   ?? "http://localhost:3000/v1",
-    txUrl:      import.meta.env.VITE_TX_API_URL      ?? "http://localhost:8002/v1",
-  },
-  auth: {
-    autoLogoutMinutes: 30,
-    tokenKey: "token",
-    roleKey: "role",
-    expiryKey: "tokenExpiry",
-  },
-  // src/config/app.config.ts
-  development: {
-    mockDelayMs: 800,
-    mockActionDelayMs: 3000,  // 報名中維持 3 秒
-    useMock: import.meta.env.VITE_USE_MOCK === "true",
-  }
-} as const
-</file>
-
-<file path="src/mock/events.ts">
-import type { Event } from "../types"
-
-export const MOCK_EVENTS: Event[] = [
-  {
-    eventId: "ev_001",
-    name: "夏日烤肉趴",
-    description: "部門聯誼活動，歡迎大家一起來烤肉！",
-    category: "sport",
-    location: "台北辦公室頂樓",
-    latitude: 25.0478,
-    longitude: 121.5319,
-    checkinRadiusMeters: 200,
-    eventStartTime: "2025-07-15T18:00:00Z",
-    eventEndTime: "2025-07-15T22:00:00Z",
-    registrationStart: "2025-06-01T00:00:00Z",
-    registrationEnd: "2025-07-01T23:59:59Z",
-    status: "registering",
-    ticketLimit: 50,
-    remainingTickets: 1,
-    cancellationDeadline: "2025-07-10T00:00:00Z",
-    guestAllowed: false,
-    guestCount: 0,
-    updatedAt: "2025-05-18T10:00:00Z",
-    isDraft: false,
-    faqs: [
-      { question: "需要自備餐具嗎？", answer: "不需要，主辦方提供" }
-    ]
-  },
-  {
-    eventId: "ev_002",
-    name: "古典音樂欣賞之夜",
-    description: "欣賞世界級古典音樂演奏，放鬆身心。",
-    category: "music",
-    location: "台北國家音樂廳",
-    latitude: 25.0478,
-    longitude: 121.5319,
-    checkinRadiusMeters: 200,
-    eventStartTime: "2025-08-01T19:00:00Z",
-    eventEndTime: "2025-08-01T22:00:00Z",
-    registrationStart: "2025-06-15T00:00:00Z",
-    registrationEnd: "2025-07-20T23:59:59Z",
-    status: "not_open",
-    ticketLimit: null,
-    remainingTickets: 0,
-    cancellationDeadline: null,
-    guestAllowed: true,
-    guestCount: 0,
-    updatedAt: "2025-05-18T10:00:00Z",
-    isDraft: true,
-  },
-  {
-    eventId: "ev_003",
-    name: "員工家庭日",
-    description: "攜家帶眷一起來大安森林公園野餐！",
-    category: "family",
-    location: "大安森林公園",
-    latitude: 25.0298,
-    longitude: 121.5354,
-    checkinRadiusMeters: 300,
-    eventStartTime: "2025-09-01T10:00:00Z",
-    eventEndTime: "2025-09-01T17:00:00Z",
-    registrationStart: "2025-07-01T00:00:00Z",
-    registrationEnd: "2025-08-20T23:59:59Z",
-    status: "waitlist",
-    ticketLimit: 100,
-    remainingTickets: 0,
-    cancellationDeadline: "2025-08-25T00:00:00Z",
-    guestAllowed: false,
-    guestCount: 0,
-    updatedAt: "2025-05-18T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_004",
-    name: "美食嘉年華",
-    description: "集結各地特色美食，讓你大飽口福！",
-    category: "food",
-    location: "信義區廣場",
-    latitude: 25.0330,
-    longitude: 121.5654,
-    checkinRadiusMeters: 300,
-    eventStartTime: "2025-08-15T11:00:00Z",
-    eventEndTime: "2025-08-15T20:00:00Z",
-    registrationStart: "2025-07-01T00:00:00Z",
-    registrationEnd: "2025-08-10T23:59:59Z",
-    status: "registering",
-    ticketLimit: 200,
-    remainingTickets: 85,
-    cancellationDeadline: "2025-08-12T00:00:00Z",
-    guestAllowed: true,
-    guestCount: 0,
-    updatedAt: "2025-05-20T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_005",
-    name: "員工路跑活動",
-    description: "健康跑步，一起挑戰 5K！",
-    category: "sport",
-    location: "河濱公園",
-    latitude: 25.0700,
-    longitude: 121.5600,
-    checkinRadiusMeters: 500,
-    eventStartTime: "2025-09-15T07:00:00Z",
-    eventEndTime: "2025-09-15T10:00:00Z",
-    registrationStart: "2025-07-15T00:00:00Z",
-    registrationEnd: "2025-09-01T23:59:59Z",
-    status: "registering",
-    ticketLimit: 300,
-    remainingTickets: 210,
-    cancellationDeadline: "2025-09-05T00:00:00Z",
-    guestAllowed: false,
-    guestCount: 0,
-    updatedAt: "2025-05-21T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_006",
-    name: "日本東京員工旅遊",
-    description: "三天兩夜東京深度之旅，名額有限！",
-    category: "travel",
-    location: "日本東京",
-    latitude: 35.6762,
-    longitude: 139.6503,
-    checkinRadiusMeters: 1000,
-    eventStartTime: "2025-10-10T08:00:00Z",
-    eventEndTime: "2025-10-12T20:00:00Z",
-    registrationStart: "2025-07-01T00:00:00Z",
-    registrationEnd: "2025-08-31T23:59:59Z",
-    status: "registering",
-    ticketLimit: 30,
-    remainingTickets: 3,
-    cancellationDeadline: "2025-09-01T00:00:00Z",
-    guestAllowed: false,
-    guestCount: 0,
-    updatedAt: "2025-05-21T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_007",
-    name: "藝術展覽參觀",
-    description: "欣賞當代藝術，豐富文化視野。",
-    category: "culture",
-    location: "台北當代藝術館",
-    latitude: 25.0520,
-    longitude: 121.5190,
-    checkinRadiusMeters: 200,
-    eventStartTime: "2025-08-20T14:00:00Z",
-    eventEndTime: "2025-08-20T17:00:00Z",
-    registrationStart: "2025-07-01T00:00:00Z",
-    registrationEnd: "2025-08-15T23:59:59Z",
-    status: "registering",
-    ticketLimit: 40,
-    remainingTickets: 22,
-    cancellationDeadline: "2025-08-17T00:00:00Z",
-    guestAllowed: true,
-    guestCount: 0,
-    updatedAt: "2025-05-22T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_008",
-    name: "程式設計競賽",
-    description: "內部黑客松，組隊挑戰技術極限！",
-    category: "contest",
-    location: "台北總部 B1 會議室",
-    latitude: 25.0478,
-    longitude: 121.5319,
-    checkinRadiusMeters: 100,
-    eventStartTime: "2025-09-20T09:00:00Z",
-    eventEndTime: "2025-09-20T18:00:00Z",
-    registrationStart: "2025-07-15T00:00:00Z",
-    registrationEnd: "2025-09-10T23:59:59Z",
-    status: "registering",
-    ticketLimit: 60,
-    remainingTickets: 35,
-    cancellationDeadline: "2025-09-12T00:00:00Z",
-    guestAllowed: false,
-    guestCount: 0,
-    updatedAt: "2025-05-22T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_009",
-    name: "爵士樂之夜",
-    description: "在輕鬆的氛圍中欣賞現場爵士演奏。",
-    category: "music",
-    location: "信義區爵士酒吧",
-    latitude: 25.0330,
-    longitude: 121.5654,
-    checkinRadiusMeters: 200,
-    eventStartTime: "2025-08-25T19:30:00Z",
-    eventEndTime: "2025-08-25T22:30:00Z",
-    registrationStart: "2025-07-01T00:00:00Z",
-    registrationEnd: "2025-08-20T23:59:59Z",
-    status: "closed",
-    ticketLimit: 50,
-    remainingTickets: 0,
-    cancellationDeadline: null,
-    guestAllowed: true,
-    guestCount: 0,
-    updatedAt: "2025-05-22T10:00:00Z",
-    isDraft: false,
-  },
-  {
-    eventId: "ev_010",
-    name: "親子料理課",
-    description: "和孩子一起學做料理，增進親子感情。",
-    category: "family",
-    location: "內湖料理教室",
-    latitude: 25.0797,
-    longitude: 121.5740,
-    checkinRadiusMeters: 200,
-    eventStartTime: "2025-10-05T14:00:00Z",
-    eventEndTime: "2025-10-05T17:00:00Z",
-    registrationStart: "2025-08-01T00:00:00Z",
-    registrationEnd: "2025-09-25T23:59:59Z",
-    status: "not_open",
-    ticketLimit: 20,
-    remainingTickets: 20,
-    cancellationDeadline: "2025-09-28T00:00:00Z",
-    guestAllowed: true,
-    guestCount: 0,
-    updatedAt: "2025-05-22T10:00:00Z",
-    isDraft: false,
-  },
-]
-
-export const MOCK_ELIGIBILITY = {
-  eligible: true,
-  reason: null,
-  remainingTickets: 12,
-  isWaitlist: false,
-}
-</file>
-
 <file path="src/mock/transactions.ts">
 import type { Transaction } from "../types"
 
@@ -3228,6 +2857,155 @@ html, body, #root {
 }
 </file>
 
+<file path="src/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import * as Sentry from "@sentry/react"
+import { Analytics } from "@vercel/analytics/react"
+
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.MODE,
+  enabled: !!import.meta.env.VITE_SENTRY_DSN,  // 沒填 DSN 就不啟動
+  tracesSampleRate: 0.1,  // 10% 的請求追蹤效能
+  integrations: [
+    Sentry.browserTracingIntegration(),
+  ],
+})
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 2,
+    },
+  },
+})
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </StrictMode>
+)
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <Analytics />
+    </QueryClientProvider>
+  </StrictMode>
+)
+</file>
+
+<file path="README.md">
+# 企業活動訂票系統 — 前端
+
+React + TypeScript + Vite 寫的訂票系統前端，串接三個後端服務（帳號、活動、交易）。
+
+## 開始之前
+
+Node.js 18 以上。
+
+```bash
+npm install
+```
+
+## 開發
+
+```bash
+npm run dev
+```
+
+預設跑在 `http://localhost:5173`。
+
+開發時用 mock 資料，不需要起後端。測試帳號：
+
+| 帳號 | 密碼 | 身份 |
+|------|------|------|
+| employee | 1234 | 一般員工 |
+| admin | 1234 | 福委會 |
+| hr | 1234 | HR |
+
+## 環境變數
+
+`.env.development` 已經設好 mock 模式，通常不需要動。
+
+要串真實後端時，複製 `.env.development` 改成你的設定：
+
+```bash
+VITE_API_BASE_URL=https://你的後端網址/v1
+VITE_USE_MOCK=false
+```
+
+`VITE_USE_MOCK=true` 的時候完全不打後端，改 `false` 才會真的發 API 請求。
+
+## 測試
+
+```bash
+npx vitest run        # 跑一次
+npx vitest            # watch 模式
+```
+
+目前有 127 個測試，包含：
+- 元件測試（EventCard、Navbar）
+- 單元測試（狀態邏輯、資格驗證）
+- 高流量測試（防重複點擊、AbortController、409 錯誤處理）
+
+## Build
+
+```bash
+npm run build
+```
+
+產出在 `dist/`，可以直接丟上靜態伺服器或 Vercel。
+
+## 部署（Vercel）
+
+1. 連結 GitHub repo
+2. Framework 選 Vite
+3. Build Command：`npm run build`
+4. Output Directory：`dist`
+5. 環境變數填 `VITE_API_BASE_URL` 和 `VITE_USE_MOCK=false`
+
+## 專案結構
+
+```
+src/
+  api/          # API 呼叫（auth、events、transactions、tickets、users）
+  components/   # 共用元件（Navbar、Toast、Skeleton 等）
+  hooks/        # Custom hooks（useDebounce、useToast、useAutoLogout）
+  mock/         # Mock 資料
+  pages/        # 頁面
+    admin/      # 福委會後台（活動管理、核銷、使用者管理）
+  tests/
+    component/  # 元件測試
+    unit/       # 單元測試
+    highTraffic/# 高流量情境測試
+  types/        # TypeScript 型別定義
+```
+
+## 角色權限
+
+| 角色 | 可以做什麼 |
+|------|-----------|
+| employee | 瀏覽活動、報名、查票券 |
+| welfare_member | 管理活動、核銷票券、管理使用者 |
+| hr | 瀏覽活動、查看統計報表 |
+
+## 注意事項
+
+- 登入後 30 分鐘自動登出
+- 報名按鈕有 500ms debounce，防止重複送出
+- 所有 API 請求都有 AbortController，切換頁面時自動取消舊請求
+- 搜尋框有 400ms debounce，避免每個字都打 API
+</file>
+
 <file path="vite.config.ts">
 import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
@@ -3499,6 +3277,289 @@ export async function getEventTickets(
 }
 </file>
 
+<file path="src/components/PageTransition.tsx">
+import { motion } from "framer-motion"
+
+interface Props {
+  children: React.ReactNode
+}
+
+// src/components/PageTransition.tsx
+function PageTransition({ children }: Props) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+export default PageTransition
+</file>
+
+<file path="src/config/app.config.ts">
+export const APP_CONFIG = {
+  api: {
+    accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
+    eventUrl:   import.meta.env.VITE_EVENT_API_URL   ?? "http://localhost:3000/v1",
+    txUrl:      import.meta.env.VITE_TX_API_URL      ?? "http://localhost:8002/v1",
+  },
+  auth: {
+    autoLogoutMinutes: 30,
+    tokenKey: "token",
+    roleKey: "role",
+    expiryKey: "tokenExpiry",
+  },
+  // src/config/app.config.ts
+  development: {
+    mockDelayMs: 800,
+    mockActionDelayMs: 3000,  // 報名中維持 3 秒
+    useMock: import.meta.env.VITE_USE_MOCK === "true",
+  }
+} as const
+</file>
+
+<file path="src/mock/events.ts">
+import type { Event } from "../types"
+
+export const MOCK_EVENTS: Event[] = [
+  {
+    eventId: "ev_001",
+    name: "夏日烤肉趴",
+    description: "部門聯誼活動，歡迎大家一起來烤肉！",
+    category: "sport",
+    location: "台北辦公室頂樓",
+    latitude: 25.0478,
+    longitude: 121.5319,
+    checkinRadiusMeters: 200,
+    eventStartTime: "2025-07-15T18:00:00Z",
+    eventEndTime: "2025-07-15T22:00:00Z",
+    registrationStart: "2025-06-01T00:00:00Z",
+    registrationEnd: "2025-07-01T23:59:59Z",
+    status: "registering",
+    ticketLimit: 50,
+    remainingTickets: 1,
+    cancellationDeadline: "2025-07-10T00:00:00Z",
+    guestAllowed: false,
+    guestCount: 0,
+    updatedAt: "2025-05-18T10:00:00Z",
+    isDraft: false,
+    faqs: [
+      { question: "需要自備餐具嗎？", answer: "不需要，主辦方提供" }
+    ]
+  },
+  {
+    eventId: "ev_002",
+    name: "古典音樂欣賞之夜",
+    description: "欣賞世界級古典音樂演奏，放鬆身心。",
+    category: "music",
+    location: "台北國家音樂廳",
+    latitude: 25.0478,
+    longitude: 121.5319,
+    checkinRadiusMeters: 200,
+    eventStartTime: "2025-08-01T19:00:00Z",
+    eventEndTime: "2025-08-01T22:00:00Z",
+    registrationStart: "2025-06-15T00:00:00Z",
+    registrationEnd: "2025-07-20T23:59:59Z",
+    status: "not_open",
+    ticketLimit: null,
+    remainingTickets: 0,
+    cancellationDeadline: null,
+    guestAllowed: true,
+    guestCount: 0,
+    updatedAt: "2025-05-18T10:00:00Z",
+    isDraft: true,
+  },
+  {
+    eventId: "ev_003",
+    name: "員工家庭日",
+    description: "攜家帶眷一起來大安森林公園野餐！",
+    category: "family",
+    location: "大安森林公園",
+    latitude: 25.0298,
+    longitude: 121.5354,
+    checkinRadiusMeters: 300,
+    eventStartTime: "2025-09-01T10:00:00Z",
+    eventEndTime: "2025-09-01T17:00:00Z",
+    registrationStart: "2025-07-01T00:00:00Z",
+    registrationEnd: "2025-08-20T23:59:59Z",
+    status: "waitlist",
+    ticketLimit: 100,
+    remainingTickets: 0,
+    cancellationDeadline: "2025-08-25T00:00:00Z",
+    guestAllowed: false,
+    guestCount: 0,
+    updatedAt: "2025-05-18T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_004",
+    name: "美食嘉年華",
+    description: "集結各地特色美食，讓你大飽口福！",
+    category: "food",
+    location: "信義區廣場",
+    latitude: 25.0330,
+    longitude: 121.5654,
+    checkinRadiusMeters: 300,
+    eventStartTime: "2025-08-15T11:00:00Z",
+    eventEndTime: "2025-08-15T20:00:00Z",
+    registrationStart: "2025-07-01T00:00:00Z",
+    registrationEnd: "2025-08-10T23:59:59Z",
+    status: "registering",
+    ticketLimit: 200,
+    remainingTickets: 85,
+    cancellationDeadline: "2025-08-12T00:00:00Z",
+    guestAllowed: true,
+    guestCount: 0,
+    updatedAt: "2025-05-20T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_005",
+    name: "員工路跑活動",
+    description: "健康跑步，一起挑戰 5K！",
+    category: "sport",
+    location: "河濱公園",
+    latitude: 25.0700,
+    longitude: 121.5600,
+    checkinRadiusMeters: 500,
+    eventStartTime: "2025-09-15T07:00:00Z",
+    eventEndTime: "2025-09-15T10:00:00Z",
+    registrationStart: "2025-07-15T00:00:00Z",
+    registrationEnd: "2025-09-01T23:59:59Z",
+    status: "registering",
+    ticketLimit: 300,
+    remainingTickets: 210,
+    cancellationDeadline: "2025-09-05T00:00:00Z",
+    guestAllowed: false,
+    guestCount: 0,
+    updatedAt: "2025-05-21T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_006",
+    name: "日本東京員工旅遊",
+    description: "三天兩夜東京深度之旅，名額有限！",
+    category: "travel",
+    location: "日本東京",
+    latitude: 35.6762,
+    longitude: 139.6503,
+    checkinRadiusMeters: 1000,
+    eventStartTime: "2025-10-10T08:00:00Z",
+    eventEndTime: "2025-10-12T20:00:00Z",
+    registrationStart: "2025-07-01T00:00:00Z",
+    registrationEnd: "2025-08-31T23:59:59Z",
+    status: "registering",
+    ticketLimit: 30,
+    remainingTickets: 3,
+    cancellationDeadline: "2025-09-01T00:00:00Z",
+    guestAllowed: false,
+    guestCount: 0,
+    updatedAt: "2025-05-21T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_007",
+    name: "藝術展覽參觀",
+    description: "欣賞當代藝術，豐富文化視野。",
+    category: "culture",
+    location: "台北當代藝術館",
+    latitude: 25.0520,
+    longitude: 121.5190,
+    checkinRadiusMeters: 200,
+    eventStartTime: "2025-08-20T14:00:00Z",
+    eventEndTime: "2025-08-20T17:00:00Z",
+    registrationStart: "2025-07-01T00:00:00Z",
+    registrationEnd: "2025-08-15T23:59:59Z",
+    status: "registering",
+    ticketLimit: 40,
+    remainingTickets: 22,
+    cancellationDeadline: "2025-08-17T00:00:00Z",
+    guestAllowed: true,
+    guestCount: 0,
+    updatedAt: "2025-05-22T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_008",
+    name: "程式設計競賽",
+    description: "內部黑客松，組隊挑戰技術極限！",
+    category: "contest",
+    location: "台北總部 B1 會議室",
+    latitude: 25.0478,
+    longitude: 121.5319,
+    checkinRadiusMeters: 100,
+    eventStartTime: "2025-09-20T09:00:00Z",
+    eventEndTime: "2025-09-20T18:00:00Z",
+    registrationStart: "2025-07-15T00:00:00Z",
+    registrationEnd: "2025-09-10T23:59:59Z",
+    status: "registering",
+    ticketLimit: 60,
+    remainingTickets: 35,
+    cancellationDeadline: "2025-09-12T00:00:00Z",
+    guestAllowed: false,
+    guestCount: 0,
+    updatedAt: "2025-05-22T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_009",
+    name: "爵士樂之夜",
+    description: "在輕鬆的氛圍中欣賞現場爵士演奏。",
+    category: "music",
+    location: "信義區爵士酒吧",
+    latitude: 25.0330,
+    longitude: 121.5654,
+    checkinRadiusMeters: 200,
+    eventStartTime: "2025-08-25T19:30:00Z",
+    eventEndTime: "2025-08-25T22:30:00Z",
+    registrationStart: "2025-07-01T00:00:00Z",
+    registrationEnd: "2025-08-20T23:59:59Z",
+    status: "closed",
+    ticketLimit: 50,
+    remainingTickets: 0,
+    cancellationDeadline: null,
+    guestAllowed: true,
+    guestCount: 0,
+    updatedAt: "2025-05-22T10:00:00Z",
+    isDraft: false,
+  },
+  {
+    eventId: "ev_010",
+    name: "親子料理課",
+    description: "和孩子一起學做料理，增進親子感情。",
+    category: "family",
+    location: "內湖料理教室",
+    latitude: 25.0797,
+    longitude: 121.5740,
+    checkinRadiusMeters: 200,
+    eventStartTime: "2025-10-05T14:00:00Z",
+    eventEndTime: "2025-10-05T17:00:00Z",
+    registrationStart: "2025-08-01T00:00:00Z",
+    registrationEnd: "2025-09-25T23:59:59Z",
+    status: "not_open",
+    ticketLimit: 20,
+    remainingTickets: 20,
+    cancellationDeadline: "2025-09-28T00:00:00Z",
+    guestAllowed: true,
+    guestCount: 0,
+    updatedAt: "2025-05-22T10:00:00Z",
+    isDraft: false,
+  },
+]
+
+export const MOCK_ELIGIBILITY = {
+  eligible: true,
+  reason: null,
+  remainingTickets: 12,
+  isWaitlist: false,
+}
+</file>
+
 <file path="src/api/transactions.ts">
 import type { Transaction, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
@@ -3644,76 +3705,6 @@ export async function updateTransaction(
   const json = await res.json()
   if (!res.ok) throw json.error
   return json.data
-}
-</file>
-
-<file path="src/components/PageTransition.tsx">
-import { motion } from "framer-motion"
-
-interface Props {
-  children: React.ReactNode
-}
-
-// src/components/PageTransition.tsx
-function PageTransition({ children }: Props) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
-export default PageTransition
-</file>
-
-<file path="package.json">
-{
-  "name": "event-ticketing-system-frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@sentry/react": "^10.55.0",
-    "@tanstack/react-query": "^5.100.14",
-    "framer-motion": "^12.40.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-router-dom": "^7.15.1",
-    "sharp": "^0.34.5"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.3.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@types/react-router-dom": "^5.3.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "jsdom": "^29.1.1",
-    "tailwindcss": "^4.3.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
-    "vitest": "^4.1.7"
-  }
 }
 </file>
 
@@ -4050,6 +4041,53 @@ function ProfilePage() {
 }
 
 export default ProfilePage
+</file>
+
+<file path="package.json">
+{
+  "name": "event-ticketing-system-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@sentry/react": "^10.55.0",
+    "@tanstack/react-query": "^5.100.14",
+    "@vercel/analytics": "^2.0.1",
+    "framer-motion": "^12.40.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.7"
+  }
+}
 </file>
 
 <file path="src/pages/admin/HRDashboardPage.tsx">
@@ -4628,93 +4666,6 @@ function TicketDetailPage() {
 }
 
 export default TicketDetailPage
-</file>
-
-<file path="src/App.tsx">
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
-import { AnimatePresence } from "framer-motion"
-import { lazy, Suspense } from "react"
-import * as Sentry from "@sentry/react"
-import Navbar from "./components/Navbar"
-import { useAutoLogout } from "./hooks/useAutoLogout"
-
-const LoginPage = lazy(() => import("./pages/LoginPage"))
-const EventListPage = lazy(() => import("./pages/EventListPage"))
-const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
-const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"))
-const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"))
-const MyTransactionsPage = lazy(() => import("./pages/MyTransactionsPage"))
-const ProfilePage = lazy(() => import("./pages/ProfilePage"))
-const EventManagePage = lazy(() => import("./pages/admin/EventManagePage"))
-const RegistrationDetailPage = lazy(() => import("./pages/admin/RegistrationDetailPage"))
-const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
-const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
-const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
-const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
-
-// 發生錯誤時的備用畫面
-function ErrorFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-4xl mb-4">⚠️</p>
-        <p className="text-white font-semibold mb-2">發生了一些問題</p>
-        <p className="text-zinc-400 text-sm mb-6">錯誤已自動回報，請重新整理頁面</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium text-sm"
-        >
-          重新整理
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function Layout() {
-  const location = useLocation()
-  useAutoLogout()
-
-  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
-
-  return (
-    <>
-      {!hideNavbar && <Navbar />}
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/auth/callback" element={<LoginPage />} />
-            <Route path="/events" element={<EventListPage />} />
-            <Route path="/events/:eventId" element={<EventDetailPage />} />
-            <Route path="/my-transactions" element={<MyTransactionsPage />} />
-            <Route path="/my-tickets" element={<MyTicketsPage />} />
-            <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-            <Route path="/admin/events" element={<EventManagePage />} />
-            <Route path="/admin/events/new" element={<CreateEventPage />} />
-            <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-            <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-            <Route path="/admin/users" element={<UserManagePage />} />
-            <Route path="/admin/hr" element={<HRDashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
-        </Suspense>
-      </AnimatePresence>
-    </>
-  )
-}
-
-function App() {
-  return (
-    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-      <BrowserRouter>
-        <Layout />
-      </BrowserRouter>
-    </Sentry.ErrorBoundary>
-  )
-}
-
-export default Sentry.withProfiler(App)
 </file>
 
 <file path="src/components/Navbar.tsx">
@@ -5433,6 +5384,90 @@ function LoginPage() {
 }
 
 export default LoginPage
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import { lazy, Suspense } from "react"
+import * as Sentry from "@sentry/react"
+import Navbar from "./components/Navbar"
+import { useAutoLogout } from "./hooks/useAutoLogout"
+
+const LoginPage = lazy(() => import("./pages/LoginPage"))
+const EventListPage = lazy(() => import("./pages/EventListPage"))
+const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
+const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"))
+const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"))
+const MyTransactionsPage = lazy(() => import("./pages/MyTransactionsPage"))
+const ProfilePage = lazy(() => import("./pages/ProfilePage"))
+const EventManagePage = lazy(() => import("./pages/admin/EventManagePage"))
+const RegistrationDetailPage = lazy(() => import("./pages/admin/RegistrationDetailPage"))
+const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
+const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
+const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
+const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
+
+// 發生錯誤時的備用畫面
+function ErrorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-4xl mb-4">⚠️</p>
+        <p className="text-white font-semibold mb-2">發生了一些問題</p>
+        <p className="text-zinc-400 text-sm mb-6">錯誤已自動回報，請重新整理頁面</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium text-sm"
+        >
+          重新整理
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Layout() {
+  const location = useLocation()
+  useAutoLogout()
+
+  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
+      <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<LoginPage />} />
+          <Route path="/events" element={<EventListPage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/my-transactions" element={<MyTransactionsPage />} />
+          <Route path="/my-tickets" element={<MyTicketsPage />} />
+          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
+          <Route path="/admin/events" element={<EventManagePage />} />
+          <Route path="/admin/events/new" element={<CreateEventPage />} />
+          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
+          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
+          <Route path="/admin/users" element={<UserManagePage />} />
+          <Route path="/admin/hr" element={<HRDashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
+      </Suspense>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+      <BrowserRouter>
+        <Layout />
+      </BrowserRouter>
+    </Sentry.ErrorBoundary>
+  )
+}
+
+export default Sentry.withProfiler(App)
 </file>
 
 <file path="src/api/auth.ts">

@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
-import { AnimatePresence } from "framer-motion"
 import { lazy, Suspense } from "react"
 import * as Sentry from "@sentry/react"
 import Navbar from "./components/Navbar"
@@ -47,26 +46,24 @@ function Layout() {
   return (
     <>
       {!hideNavbar && <Navbar />}
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<LoginPage />} />
-            <Route path="/auth/callback" element={<LoginPage />} />
-            <Route path="/events" element={<EventListPage />} />
-            <Route path="/events/:eventId" element={<EventDetailPage />} />
-            <Route path="/my-transactions" element={<MyTransactionsPage />} />
-            <Route path="/my-tickets" element={<MyTicketsPage />} />
-            <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-            <Route path="/admin/events" element={<EventManagePage />} />
-            <Route path="/admin/events/new" element={<CreateEventPage />} />
-            <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-            <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-            <Route path="/admin/users" element={<UserManagePage />} />
-            <Route path="/admin/hr" element={<HRDashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
-        </Suspense>
-      </AnimatePresence>
+      <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<LoginPage />} />
+          <Route path="/events" element={<EventListPage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/my-transactions" element={<MyTransactionsPage />} />
+          <Route path="/my-tickets" element={<MyTicketsPage />} />
+          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
+          <Route path="/admin/events" element={<EventManagePage />} />
+          <Route path="/admin/events/new" element={<CreateEventPage />} />
+          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
+          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
+          <Route path="/admin/users" element={<UserManagePage />} />
+          <Route path="/admin/hr" element={<HRDashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
+      </Suspense>
     </>
   )
 }
