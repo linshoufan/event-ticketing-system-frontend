@@ -1,0 +1,2 @@
+一般測試 : npm run test
+e2e 測試 : npm run test:e2e

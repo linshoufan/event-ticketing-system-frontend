@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test"
 
 const MOCK_ACCOUNTS   = { id: "employee", password: "1234" }
-const REAL_ACCOUNTS   = { id: "YOUR_EMPLOYEE_ID", password: "YOUR_PASSWORD" }
+const REAL_ACCOUNTS = { id: "1000001", password: "password123" }
 
 function getAccount(baseURL: string) {
   return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS

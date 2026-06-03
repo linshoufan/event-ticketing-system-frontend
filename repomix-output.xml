@@ -41,86 +41,671 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-.github/
-  workflows/
-    ci.yml
-src/
-  api/
-    auth.ts
-    events.ts
-    fetchWithRetry.ts
-    tickets.ts
-    transactions.ts
-    users.ts
-  components/
-    EventCard.tsx
-    Navbar.tsx
-    PageTransition.tsx
-    Skeleton.tsx
-    Toast.tsx
-  config/
-    app.config.ts
-  hooks/
-    useAutoLogout.ts
-    useDebounce.ts
-    useToast.ts
-  mock/
-    events.ts
-    tickets.ts
-    transactions.ts
-    users.ts
-  pages/
-    admin/
-      CheckinPage.tsx
-      CreateEventPage.tsx
-      EventManagePage.tsx
-      HRDashboardPage.tsx
-      RegistrationDetailPage.tsx
-      UserManagePage.tsx
-    EventDetailPage.tsx
-    EventListPage.tsx
-    LoginPage.tsx
-    MyTicketsPage.tsx
-    MyTransactionsPage.tsx
-    ProfilePage.tsx
-    TicketDetailPage.tsx
-  tests/
-    component/
-      EventCard.test.tsx
-      Navbar.test.tsx
-    highTraffic/
-      abort.test.tsx
-      debounce.test.ts
-      raceCondition.test.tsx
-      register.test.tsx
-    unit/
-      dietType.test.ts
-      eligibility.test.ts
-      eventStatus.test.ts
-      ticketStatus.test.ts
-      userRole.test.ts
-    setup.ts
-  types/
-    index.ts
-  App.css
-  App.tsx
-  index.css
-  main.tsx
-  vite-env.d.ts
+.github/workflows/ci.yml
 .gitignore
+e2e/admin.spec.ts
+e2e/auth.spec.ts
+e2e/employee.spec.ts
 eslint.config.js
 index.html
 package.json
+playwright.config.ts
 README.md
 repomix.config.json
+src/api/auth.ts
+src/api/events.ts
+src/api/fetchWithRetry.ts
+src/api/tickets.ts
+src/api/transactions.ts
+src/api/users.ts
+src/App.css
+src/App.tsx
+src/components/EventCard.tsx
+src/components/Navbar.tsx
+src/components/PageTransition.tsx
+src/components/Skeleton.tsx
+src/components/Toast.tsx
+src/config/app.config.ts
+src/hooks/useAutoLogout.ts
+src/hooks/useDebounce.ts
+src/hooks/useToast.ts
+src/index.css
+src/main.tsx
+src/mock/events.ts
+src/mock/tickets.ts
+src/mock/transactions.ts
+src/mock/users.ts
+src/pages/admin/CheckinPage.tsx
+src/pages/admin/CreateEventPage.tsx
+src/pages/admin/EventManagePage.tsx
+src/pages/admin/HRDashboardPage.tsx
+src/pages/admin/RegistrationDetailPage.tsx
+src/pages/admin/UserManagePage.tsx
+src/pages/EventDetailPage.tsx
+src/pages/EventListPage.tsx
+src/pages/LoginPage.tsx
+src/pages/MyTicketsPage.tsx
+src/pages/MyTransactionsPage.tsx
+src/pages/ProfilePage.tsx
+src/pages/TicketDetailPage.tsx
+src/tests/component/EventCard.test.tsx
+src/tests/component/Navbar.test.tsx
+src/tests/highTraffic/abort.test.tsx
+src/tests/highTraffic/debounce.test.ts
+src/tests/highTraffic/raceCondition.test.tsx
+src/tests/highTraffic/register.test.tsx
+src/tests/setup.ts
+src/tests/unit/dietType.test.ts
+src/tests/unit/eligibility.test.ts
+src/tests/unit/eventStatus.test.ts
+src/tests/unit/ticketStatus.test.ts
+src/tests/unit/userRole.test.ts
+src/types/index.ts
+src/vite-env.d.ts
+test-results/.last-run.json
 tsconfig.app.json
 tsconfig.json
 tsconfig.node.json
+vercel.json
 vite.config.ts
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="e2e/admin.spec.ts">
+import { test, expect } from "@playwright/test"
+
+const MOCK_ACCOUNTS   = { id: "admin", password: "1234" }
+const REAL_ACCOUNTS   = { id: "YOUR_ADMIN_ID", password: "YOUR_PASSWORD" }
+
+function getAccount(baseURL: string) {
+  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+}
+
+async function fillDateTimeLocal(page: any, name: string, value: string) {
+  await page.evaluate(({ name, value }: { name: string; value: string }) => {
+    const input = document.querySelector(`input[name="${name}"]`) as HTMLInputElement
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, "value"
+    )?.set
+    nativeInputValueSetter?.call(input, value)
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+    input.dispatchEvent(new Event("change", { bubbles: true }))
+  }, { name, value })
+}
+
+async function loginAsAdmin(page: any, baseURL: string) {
+  const account = getAccount(baseURL)
+  await page.goto("/")
+  await page.click("text=福委登入")
+  await page.fill('input[autocomplete="username"]', account.id)
+  await page.fill('input[autocomplete="current-password"]', account.password)
+  await page.click('button[type="submit"]')
+  await expect(page).toHaveURL(/\/admin\/events$/)
+}
+
+test.describe("活動管理", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+  })
+
+  test("可以看到活動管理頁面", async ({ page }) => {
+    // ✅ Fix 1: 用 heading role 避免和 Navbar 衝突
+    await expect(page.getByRole("heading", { name: "活動管理" })).toBeVisible()
+    await expect(page.locator("text=+ 新增活動")).toBeVisible()
+  })
+
+    test("可以開啟新增活動頁面", async ({ page }) => {
+    await page.click("text=+ 新增活動")
+    await expect(page).toHaveURL(/\/admin\/events\/new$/)
+    await expect(page.getByRole("heading", { name: "新增活動" })).toBeVisible()
+    await expect(page.locator('input[name="name"]')).toBeVisible()
+    await expect(page.locator('select[name="category"]')).toBeVisible()
+    await expect(page.locator('input[name="location"]')).toBeVisible()
+    await expect(page.locator("text=儲存草稿")).toBeVisible()
+    await expect(page.locator("text=直接發布")).toBeVisible()
+    })
+
+    test("未填必填欄位顯示錯誤訊息", async ({ page }) => {
+    await page.click("text=+ 新增活動")
+    await page.click("text=儲存草稿")
+    await expect(page.locator("text=請填寫所有必填欄位")).toBeVisible()
+    await expect(page).toHaveURL(/\/admin\/events\/new$/)
+    })
+
+  test("草稿活動可以發布", async ({ page }) => {
+    const publishBtn = page.locator("text=發布").first()
+    if (await publishBtn.count() > 0) {
+      await publishBtn.click()
+      await expect(publishBtn).not.toBeVisible()
+    }
+  })
+
+  test("可以刪除活動", async ({ page }) => {
+    const deleteBtn = page.locator("text=刪除").first()
+    if (await deleteBtn.count() > 0) {
+      const countBefore = await page.locator("text=刪除").count()
+      page.on("dialog", dialog => dialog.accept())
+      await deleteBtn.click()
+      await page.waitForTimeout(500)
+      const countAfter = await page.locator("text=刪除").count()
+      expect(countAfter).toBeLessThan(countBefore)
+    }
+  })
+
+  test("可以看報名詳情", async ({ page }) => {
+    const detailBtn = page.locator("text=報名詳情").first()
+    if (await detailBtn.count() > 0) {
+      await detailBtn.click()
+      await expect(page).toHaveURL(/\/admin\/events\/.*\/registrations$/)
+      await expect(page.getByRole("heading", { name: "報名詳情" })).toBeVisible()
+    }
+  })
+
+  test("可以進入核銷頁面", async ({ page }) => {
+    const checkinBtn = page.locator("text=核銷").first()
+    if (await checkinBtn.count() > 0) {
+      await checkinBtn.click()
+      await expect(page).toHaveURL(/\/admin\/events\/.*\/checkin$/)
+      await expect(page.getByRole("heading", { name: "核銷" })).toBeVisible()
+    }
+  })
+})
+
+test.describe("報名詳情", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+    // ✅ Fix 3: 等待元素出現再點，不用 if 判斷
+    await page.waitForSelector("text=報名詳情")
+    await page.locator("text=報名詳情").first().click()
+    await expect(page).toHaveURL(/\/admin\/events\/.*\/registrations$/)
+  })
+
+  test("可以看到報名統計", async ({ page }) => {
+    await expect(page.locator("text=正取").first()).toBeVisible()
+    await expect(page.locator("text=候補").first()).toBeVisible()
+    await expect(page.locator("text=已取消").first()).toBeVisible()
+  })
+
+  test("可以依狀態篩選報名", async ({ page }) => {
+    await page.locator("select").selectOption("confirmed")
+    await expect(page.locator("text=正取").first()).toBeVisible()
+  })
+})
+
+test.describe("使用者管理", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+    await page.click("text=使用者")
+    await expect(page).toHaveURL(/\/admin\/users$/)
+  })
+
+  test("可以看到使用者管理頁面", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
+  })
+
+  test("可以依角色篩選", async ({ page }) => {
+    await page.locator("select").nth(0).selectOption("employee")
+    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
+  })
+
+  test("可以依狀態篩選", async ({ page }) => {
+    await page.locator("select").nth(1).selectOption("active")
+    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
+  })
+
+  test("可以修改使用者角色", async ({ page }) => {
+    const roleSelect = page.locator("select").nth(2)
+    if (await roleSelect.count() > 0) {
+      await roleSelect.selectOption("hr")
+      await expect(roleSelect).toHaveValue("hr")
+    }
+  })
+
+  test("可以刪除使用者", async ({ page }) => {
+    const deleteBtn = page.locator("text=刪除").first()
+    if (await deleteBtn.count() > 0) {
+      const countBefore = await page.locator("text=刪除").count()
+      page.on("dialog", dialog => dialog.accept())
+      await deleteBtn.click()
+      await page.waitForTimeout(500)
+      const countAfter = await page.locator("text=刪除").count()
+      expect(countAfter).toBeLessThanOrEqual(countBefore)
+    }
+  })
+})
+
+test.describe("核銷", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+    // ✅ Fix 3: 等待元素出現再點
+    await page.waitForSelector("text=核銷")
+    await page.locator("text=核銷").first().click()
+    await expect(page).toHaveURL(/\/admin\/events\/.*\/checkin$/)
+  })
+
+  test("可以搜尋票券", async ({ page }) => {
+    await page.waitForSelector('input[placeholder="搜尋姓名或票券 ID..."]')
+    await page.fill('input[placeholder="搜尋姓名或票券 ID..."]', "john")
+    await expect(page.getByRole("heading", { name: "核銷" })).toBeVisible()
+  })
+
+  test("可以手動核銷票券", async ({ page }) => {
+    const checkinBtn = page.locator("button:has-text('核銷')").first()
+    if (await checkinBtn.count() > 0) {
+      page.on("dialog", dialog => dialog.accept())
+      await checkinBtn.click()
+      await page.waitForTimeout(500)
+      await expect(page.locator("text=完成").first()).toBeVisible()
+    }
+  })
+})
+</file>
+
+<file path="e2e/auth.spec.ts">
+import { test, expect } from "@playwright/test"
+
+// Mock 環境帳號
+const MOCK_ACCOUNTS = {
+  employee:      { id: "employee", password: "1234" },
+  admin:         { id: "admin",    password: "1234" },
+  hr:            { id: "hr",       password: "1234" },
+}
+
+// 真實環境帳號（拿到後填在這裡）
+const REAL_ACCOUNTS = {
+  employee:      { id: "YOUR_EMPLOYEE_ID", password: "YOUR_PASSWORD" },
+  admin:         { id: "YOUR_ADMIN_ID",    password: "YOUR_PASSWORD" },
+  hr:            { id: "YOUR_HR_ID",       password: "YOUR_PASSWORD" },
+}
+
+// 根據環境選帳號
+function getAccounts(baseURL: string) {
+  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+}
+
+test.describe("登入流程", () => {
+
+  test("員工登入成功，跳轉到活動列表", async ({ page, baseURL }) => {
+    const { employee } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', employee.id)
+    await page.fill('input[autocomplete="current-password"]', employee.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/events$/)
+    await expect(page.locator("text=活動列表")).toBeVisible()
+  })
+
+  test("福委登入成功，跳轉到活動管理", async ({ page, baseURL }) => {
+    const { admin } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=福委登入")
+    await page.fill('input[autocomplete="username"]', admin.id)
+    await page.fill('input[autocomplete="current-password"]', admin.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/admin\/events$/)
+    await expect(page.locator("text=活動管理")).toBeVisible()
+  })
+
+  test("HR 登入成功，跳轉到統計頁面", async ({ page, baseURL }) => {
+    const { hr } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=HR 登入")
+    await page.fill('input[autocomplete="username"]', hr.id)
+    await page.fill('input[autocomplete="current-password"]', hr.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/admin\/hr$/)
+    await expect(page.locator("text=統計報表")).toBeVisible()
+  })
+
+  test("密碼錯誤，顯示錯誤訊息", async ({ page }) => {
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', "employee")
+    await page.fill('input[autocomplete="current-password"]', "wrongpassword")
+    await page.click('button[type="submit"]')
+    await expect(page.locator("text=員工編號或密碼錯誤")).toBeVisible()
+    await expect(page).toHaveURL("/")
+  })
+
+  test("角色不符，顯示錯誤訊息", async ({ page }) => {
+    await page.goto("/")
+    await page.click("text=福委登入")
+    await page.fill('input[autocomplete="username"]', "employee")
+    await page.fill('input[autocomplete="current-password"]', "1234")
+    await page.click('button[type="submit"]')
+    await expect(page.locator("text=您的帳號權限不符")).toBeVisible()
+    await expect(page).toHaveURL("/")
+  })
+
+  test("未填帳號，不能送出", async ({ page }) => {
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL("/")
+  })
+
+})
+
+test.describe("登出流程", () => {
+
+  test.beforeEach(async ({ page, baseURL }) => {
+    const { employee } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', employee.id)
+    await page.fill('input[autocomplete="current-password"]', employee.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/events$/)
+  })
+
+  test("登出後跳回登入頁面", async ({ page }) => {
+    await page.click("text=登出")
+    await expect(page).toHaveURL("/")
+    await expect(page.locator("text=企業活動訂票系統")).toBeVisible()
+  })
+
+  test("登出後無法存取受保護頁面", async ({ page }) => {
+    await page.click("text=登出")
+    await page.goto("/events")
+    await expect(page).toHaveURL("/")
+  })
+
+})
+</file>
+
+<file path="e2e/employee.spec.ts">
+import { test, expect } from "@playwright/test"
+
+const MOCK_ACCOUNTS   = { id: "employee", password: "1234" }
+const REAL_ACCOUNTS   = { id: "YOUR_EMPLOYEE_ID", password: "YOUR_PASSWORD" }
+
+function getAccount(baseURL: string) {
+  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+}
+
+async function loginAsEmployee(page: any, baseURL: string) {
+  const account = getAccount(baseURL)
+  await page.goto("/")
+  await page.click("text=員工登入")
+  await page.fill('input[autocomplete="username"]', account.id)
+  await page.fill('input[autocomplete="current-password"]', account.password)
+  await page.click('button[type="submit"]')
+  await expect(page).toHaveURL(/\/events$/)
+}
+
+test.describe("活動瀏覽", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+  })
+
+  test("可以看到活動列表", async ({ page }) => {
+    await expect(page.locator("text=活動列表")).toBeVisible()
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
+  })
+
+  test("可以搜尋活動", async ({ page }) => {
+    await page.fill('input[placeholder="搜尋活動..."]', "烤肉")
+    await page.waitForTimeout(500)
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
+  })
+
+  test("可以依分類篩選", async ({ page }) => {
+    await page.selectOption("select", "sport")
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
+  })
+
+  test("可以切換排序", async ({ page }) => {
+    await page.click("text=最熱門")
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
+  })
+
+  test("可以點進活動詳情", async ({ page }) => {
+    await page.locator('[data-testid="event-card"]').first().click()
+    await expect(page.url()).toMatch(/\/events\//)
+    await expect(page.locator("text=報名資料")).toBeVisible()
+  })
+
+  test("活動詳情顯示正確資訊", async ({ page }) => {
+    await page.locator('[data-testid="event-card"]').first().click()
+    await expect(page.locator("text=📍").first()).toBeVisible()
+    await expect(page.locator("text=🕐").first()).toBeVisible()
+    await expect(page.locator("text=報名截止").first()).toBeVisible()
+  })
+})
+
+test.describe("報名流程", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.locator('[data-testid="event-card"]').first().click()
+    await expect(page.url()).toMatch(/\/events\//)
+  })
+
+  test("可以選擇飲食需求", async ({ page }) => {
+    const select = page.locator("select").first()
+    await select.selectOption("veg")
+    await expect(select).toHaveValue("veg")
+  })
+
+  test("可以勾選自行開車", async ({ page }) => {
+    const checkbox = page.locator('input[type="checkbox"]')
+    await checkbox.check()
+    await expect(checkbox).toBeChecked()
+  })
+
+  test("報名按鈕存在且可點擊", async ({ page }) => {
+    const btn = page.locator("text=立即報名")
+      .or(page.locator("text=加入候補"))
+      .or(page.locator("text=您已報名此活動"))
+      .or(page.locator("text=目前無法報名"))
+    await expect(btn.first()).toBeVisible()
+  })
+
+  test("點擊報名後按鈕狀態改變", async ({ page }) => {
+    const registerBtn = page.locator("text=立即報名")
+    if (await registerBtn.isVisible()) {
+      await registerBtn.click()
+      await page.waitForTimeout(600)
+      const changedBtn = page.locator("text=報名中...")
+        .or(page.locator("text=您已報名此活動"))
+        .or(page.locator("text=已加入候補名單"))
+      await expect(changedBtn.first()).toBeVisible()
+    }
+  })
+})
+
+test.describe("報名紀錄", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.click("text=報名")
+    await expect(page).toHaveURL(/\/my-transactions$/)
+  })
+
+  test("可以看到報名紀錄頁面", async ({ page }) => {
+    await expect(page.locator("text=我的報名紀錄")).toBeVisible()
+  })
+
+  test("可以依狀態篩選", async ({ page }) => {
+    await page.selectOption("select", "confirmed")
+    await expect(page.locator("text=我的報名紀錄")).toBeVisible()
+  })
+})
+
+test.describe("票券", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.click("text=票券")
+    await expect(page).toHaveURL(/\/my-tickets$/)
+  })
+
+  test("可以看到票券頁面", async ({ page }) => {
+    await expect(page.locator("text=我的票券")).toBeVisible()
+  })
+
+  test("可以依狀態篩選票券", async ({ page }) => {
+    await page.selectOption("select", "unused")
+    await expect(page.locator("text=我的票券")).toBeVisible()
+  })
+
+  test("可以點進票券詳情", async ({ page }) => {
+    await page.waitForURL(/\/my-tickets$/)
+    // 用票券特有的內容定位，不用 class
+    const ticket = page.locator("text=可報到, text=已報到, text=未開放").first()
+    if (await ticket.count() > 0) {
+    await ticket.locator("..").locator("..").click()
+    await expect(page.url()).toMatch(/\/my-tickets\//)
+    await expect(page.locator("text=票券編號")).toBeVisible()
+    }
+    })
+})
+
+test.describe("個人資料", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.click("text=個人")
+    await expect(page).toHaveURL(/\/profile$/)
+  })
+
+  test("可以看到個人資料頁面", async ({ page }) => {
+    await expect(page.locator("text=個人資料")).toBeVisible()
+    await expect(page.locator("text=活動偏好")).toBeVisible()
+    await expect(page.locator("text=報名自動填入")).toBeVisible()
+  })
+
+  test("可以選擇活動偏好", async ({ page }) => {
+    await page.click("text=🏃 運動")
+    await expect(page.locator("text=🏃 運動")).toBeVisible()
+  })
+
+  test("可以儲存設定", async ({ page }) => {
+    await page.click("text=儲存")
+    await expect(page.locator("text=✓ 已儲存").or(page.locator("text=儲存中..."))).toBeVisible()
+  })
+})
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      globals: globals.browser,
+    },
+  },
+])
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>event-ticketing-system-frontend</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="playwright.config.ts">
+import { defineConfig } from "@playwright/test"
+
+export default defineConfig({
+  testDir: "./e2e",
+  timeout: 30000,
+  use: {
+    headless: true,
+    screenshot: "only-on-failure",
+  },
+  projects: [
+    {
+      name: "mock",
+      use: {
+        baseURL: "http://localhost:5173",
+      },
+    },
+    {
+      name: "production",
+      use: {
+        baseURL: "https://event-ticketing-system-frontend-eight.vercel.app",
+      },
+    },
+  ],
+})
+</file>
+
+<file path="repomix.config.json">
+{
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml"
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "node_modules/**",
+      "dist/**",
+      ".env*",
+      "test.txt",
+      "repomix-output.xml",
+      "src/assets/*.jpg",
+      "src/assets/*.png",
+      "src/assets/*.svg",
+      "public/**",
+      "*.lock",
+      "package-lock.json"
+    ]
+  }
+}
+</file>
 
 <file path="src/api/fetchWithRetry.ts">
 export async function fetchWithRetry(
@@ -261,6 +846,193 @@ export async function deleteUser(userId: string) {
   const json = await res.json()
   if (!res.ok) throw json.error
   return json.data
+}
+</file>
+
+<file path="src/App.css">
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
 }
 </file>
 
@@ -663,299 +1435,10 @@ describe("票券競態條件", () => {
 })
 </file>
 
-<file path="src/App.css">
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
-}
-
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
-  position: relative;
-  width: 100%;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
-
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
-}
-</file>
-
-<file path="src/vite-env.d.ts">
-/// <reference types="vite/client" />
-
-interface ImportMetaEnv {
-  readonly VITE_ACCOUNT_API_URL: string
-  readonly VITE_EVENT_API_URL: string
-  readonly VITE_TX_API_URL: string
-  readonly VITE_USE_MOCK: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
-</file>
-
-<file path=".gitignore">
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-</file>
-
-<file path="eslint.config.js">
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
-    languageOptions: {
-      globals: globals.browser,
-    },
-  },
-])
-</file>
-
-<file path="index.html">
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>event-ticketing-system-frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
-</file>
-
-<file path="repomix.config.json">
+<file path="test-results/.last-run.json">
 {
-  "output": {
-    "filePath": "repomix-output.xml",
-    "style": "xml"
-  },
-  "ignore": {
-    "useGitignore": true,
-    "useDefaultPatterns": true,
-    "customPatterns": [
-      "node_modules/**",
-      "dist/**",
-      ".env*",
-      "test.txt",
-      "repomix-output.xml",
-      "src/assets/*.jpg",
-      "src/assets/*.png",
-      "src/assets/*.svg",
-      "public/**",
-      "*.lock",
-      "package-lock.json"
-    ]
-  }
+  "status": "passed",
+  "failedTests": []
 }
 </file>
 
@@ -1021,6 +1504,14 @@ export default defineConfig([
     "noFallthroughCasesInSwitch": true
   },
   "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vercel.json">
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
 </file>
 
@@ -1807,6 +2298,26 @@ function renderPage(eventId = "ev_001") {
 })
 </file>
 
+<file path="src/tests/setup.ts">
+import "@testing-library/jest-dom"
+import { beforeEach, vi } from "vitest"
+
+// 每個測試前清空 localStorage
+beforeEach(() => {
+  localStorage.clear()
+})
+
+// Mock geolocation
+Object.defineProperty(navigator, "geolocation", {
+  value: {
+    getCurrentPosition: vi.fn(),
+    watchPosition: vi.fn(),
+    clearWatch: vi.fn(),
+  },
+  writable: true,
+})
+</file>
+
 <file path="src/tests/unit/dietType.test.ts">
 import { describe, it, expect } from "vitest"
 import type { DietType } from "../../types"
@@ -2363,26 +2874,6 @@ describe("getDefaultRoute", () => {
 })
 </file>
 
-<file path="src/tests/setup.ts">
-import "@testing-library/jest-dom"
-import { beforeEach, vi } from "vitest"
-
-// 每個測試前清空 localStorage
-beforeEach(() => {
-  localStorage.clear()
-})
-
-// Mock geolocation
-Object.defineProperty(navigator, "geolocation", {
-  value: {
-    getCurrentPosition: vi.fn(),
-    watchPosition: vi.fn(),
-    clearWatch: vi.fn(),
-  },
-  writable: true,
-})
-</file>
-
 <file path="src/types/index.ts">
 export type Role = "welfare_member" | "employee" | "hr"
 
@@ -2505,6 +2996,139 @@ export interface ApiError {
     message: string
     unlockAt?: string
   }
+}
+</file>
+
+<file path="src/vite-env.d.ts">
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_ACCOUNT_API_URL: string
+  readonly VITE_EVENT_API_URL: string
+  readonly VITE_TX_API_URL: string
+  readonly VITE_TICKET_API_URL: string
+  readonly VITE_USE_MOCK: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+</file>
+
+<file path="README.md">
+# 企業活動訂票系統 — 前端
+
+React + TypeScript + Vite 寫的訂票系統前端，串接三個後端服務（帳號、活動、交易）。
+
+## 開始之前
+
+Node.js 18 以上。
+
+```bash
+npm install
+```
+
+## 開發
+
+```bash
+npm run dev
+```
+
+預設跑在 `http://localhost:5173`。
+
+開發時用 mock 資料，不需要起後端。測試帳號：
+
+| 帳號 | 密碼 | 身份 |
+|------|------|------|
+| employee | 1234 | 一般員工 |
+| admin | 1234 | 福委會 |
+| hr | 1234 | HR |
+
+## 環境變數
+
+`.env.development` 已經設好 mock 模式，通常不需要動。
+
+要串真實後端時，複製 `.env.development` 改成你的設定：
+
+```bash
+VITE_API_BASE_URL=https://你的後端網址/v1
+VITE_USE_MOCK=false
+```
+
+`VITE_USE_MOCK=true` 的時候完全不打後端，改 `false` 才會真的發 API 請求。
+
+## 測試
+
+```bash
+npx vitest run        # 跑一次
+npx vitest            # watch 模式
+```
+
+目前有 127 個測試，包含：
+- 元件測試（EventCard、Navbar）
+- 單元測試（狀態邏輯、資格驗證）
+- 高流量測試（防重複點擊、AbortController、409 錯誤處理）
+
+## Build
+
+```bash
+npm run build
+```
+
+產出在 `dist/`，可以直接丟上靜態伺服器或 Vercel。
+
+## 部署（Vercel）
+
+1. 連結 GitHub repo
+2. Framework 選 Vite
+3. Build Command：`npm run build`
+4. Output Directory：`dist`
+5. 環境變數填 `VITE_API_BASE_URL` 和 `VITE_USE_MOCK=false`
+
+## 專案結構
+
+```
+src/
+  api/          # API 呼叫（auth、events、transactions、tickets、users）
+  components/   # 共用元件（Navbar、Toast、Skeleton 等）
+  hooks/        # Custom hooks（useDebounce、useToast、useAutoLogout）
+  mock/         # Mock 資料
+  pages/        # 頁面
+    admin/      # 福委會後台（活動管理、核銷、使用者管理）
+  tests/
+    component/  # 元件測試
+    unit/       # 單元測試
+    highTraffic/# 高流量情境測試
+  types/        # TypeScript 型別定義
+```
+
+## 角色權限
+
+| 角色 | 可以做什麼 |
+|------|-----------|
+| employee | 瀏覽活動、報名、查票券 |
+| welfare_member | 管理活動、核銷票券、管理使用者 |
+| hr | 瀏覽活動、查看統計報表 |
+
+## 注意事項
+
+- 登入後 30 分鐘自動登出
+- 報名按鈕有 500ms debounce，防止重複送出
+- 所有 API 請求都有 AbortController，切換頁面時自動取消舊請求
+- 搜尋框有 400ms debounce，避免每個字都打 API
+</file>
+
+<file path="src/index.css">
+@import "tailwindcss";
+
+html, body, #root {
+  min-height: 100vh;
+  background-color: #09090b;
+  background-image: 
+    radial-gradient(ellipse at 20% 50%, rgba(30, 58, 138, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(88, 28, 135, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(6, 78, 59, 0.08) 0%, transparent 50%);
+  color: white;
 }
 </file>
 
@@ -2843,169 +3467,6 @@ function CreateEventPage() {
 export default CreateEventPage
 </file>
 
-<file path="src/index.css">
-@import "tailwindcss";
-
-html, body, #root {
-  min-height: 100vh;
-  background-color: #09090b;
-  background-image: 
-    radial-gradient(ellipse at 20% 50%, rgba(30, 58, 138, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(88, 28, 135, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 80%, rgba(6, 78, 59, 0.08) 0%, transparent 50%);
-  color: white;
-}
-</file>
-
-<file path="src/main.tsx">
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import * as Sentry from "@sentry/react"
-import { Analytics } from "@vercel/analytics/react"
-
-Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
-  environment: import.meta.env.MODE,
-  enabled: !!import.meta.env.VITE_SENTRY_DSN,  // 沒填 DSN 就不啟動
-  tracesSampleRate: 0.1,  // 10% 的請求追蹤效能
-  integrations: [
-    Sentry.browserTracingIntegration(),
-  ],
-})
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      retry: 2,
-    },
-  },
-})
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </StrictMode>
-)
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-      <Analytics />
-    </QueryClientProvider>
-  </StrictMode>
-)
-</file>
-
-<file path="README.md">
-# 企業活動訂票系統 — 前端
-
-React + TypeScript + Vite 寫的訂票系統前端，串接三個後端服務（帳號、活動、交易）。
-
-## 開始之前
-
-Node.js 18 以上。
-
-```bash
-npm install
-```
-
-## 開發
-
-```bash
-npm run dev
-```
-
-預設跑在 `http://localhost:5173`。
-
-開發時用 mock 資料，不需要起後端。測試帳號：
-
-| 帳號 | 密碼 | 身份 |
-|------|------|------|
-| employee | 1234 | 一般員工 |
-| admin | 1234 | 福委會 |
-| hr | 1234 | HR |
-
-## 環境變數
-
-`.env.development` 已經設好 mock 模式，通常不需要動。
-
-要串真實後端時，複製 `.env.development` 改成你的設定：
-
-```bash
-VITE_API_BASE_URL=https://你的後端網址/v1
-VITE_USE_MOCK=false
-```
-
-`VITE_USE_MOCK=true` 的時候完全不打後端，改 `false` 才會真的發 API 請求。
-
-## 測試
-
-```bash
-npx vitest run        # 跑一次
-npx vitest            # watch 模式
-```
-
-目前有 127 個測試，包含：
-- 元件測試（EventCard、Navbar）
-- 單元測試（狀態邏輯、資格驗證）
-- 高流量測試（防重複點擊、AbortController、409 錯誤處理）
-
-## Build
-
-```bash
-npm run build
-```
-
-產出在 `dist/`，可以直接丟上靜態伺服器或 Vercel。
-
-## 部署（Vercel）
-
-1. 連結 GitHub repo
-2. Framework 選 Vite
-3. Build Command：`npm run build`
-4. Output Directory：`dist`
-5. 環境變數填 `VITE_API_BASE_URL` 和 `VITE_USE_MOCK=false`
-
-## 專案結構
-
-```
-src/
-  api/          # API 呼叫（auth、events、transactions、tickets、users）
-  components/   # 共用元件（Navbar、Toast、Skeleton 等）
-  hooks/        # Custom hooks（useDebounce、useToast、useAutoLogout）
-  mock/         # Mock 資料
-  pages/        # 頁面
-    admin/      # 福委會後台（活動管理、核銷、使用者管理）
-  tests/
-    component/  # 元件測試
-    unit/       # 單元測試
-    highTraffic/# 高流量情境測試
-  types/        # TypeScript 型別定義
-```
-
-## 角色權限
-
-| 角色 | 可以做什麼 |
-|------|-----------|
-| employee | 瀏覽活動、報名、查票券 |
-| welfare_member | 管理活動、核銷票券、管理使用者 |
-| hr | 瀏覽活動、查看統計報表 |
-
-## 注意事項
-
-- 登入後 30 分鐘自動登出
-- 報名按鈕有 500ms debounce，防止重複送出
-- 所有 API 請求都有 AbortController，切換頁面時自動取消舊請求
-- 搜尋框有 400ms debounce，避免每個字都打 API
-</file>
-
 <file path="vite.config.ts">
 import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
@@ -3173,110 +3634,6 @@ export async function deleteEvent(eventId: string) {
 }
 </file>
 
-<file path="src/api/tickets.ts">
-import type { Ticket } from "../types"
-import { getAuthHeaders } from "./auth"
-import { APP_CONFIG } from "../config/app.config"
-
-const BASE_URL = APP_CONFIG.api.txUrl
-const { useMock, mockDelayMs, mockActionDelayMs } = APP_CONFIG.development
-
-function delay<T>(data: T, ms: number = mockDelayMs, signal?: AbortSignal): Promise<T> {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new DOMException("Aborted", "AbortError"))
-      return
-    }
-    const timer = setTimeout(() => resolve(data), ms)
-    signal?.addEventListener("abort", () => {
-      clearTimeout(timer)
-      reject(new DOMException("Aborted", "AbortError"))
-    })
-  })
-}
-
-export async function getTickets(
-  params?: { status?: "used" | "unused" | "invalid" },
-  signal?: AbortSignal
-): Promise<Ticket[]> {
-  if (useMock) {
-    const { MOCK_TICKETS } = await import("../mock/tickets")
-    const data = params?.status
-      ? MOCK_TICKETS.filter(t => t.status === params.status)
-      : MOCK_TICKETS
-    return delay(data, mockDelayMs, signal)
-  }
-
-  const query = new URLSearchParams(
-    Object.entries(params ?? {})
-      .filter(([, v]) => v !== undefined)
-      .map(([k, v]) => [k, String(v)])
-  )
-  const res = await fetch(`${BASE_URL}/tickets?${query}`, { headers: getAuthHeaders(), signal })
-  const json = await res.json()
-  return json.data
-}
-
-export async function getTicketById(ticketId: string, signal?: AbortSignal): Promise<Ticket> {
-  if (useMock) {
-    const { MOCK_TICKETS } = await import("../mock/tickets")
-    const ticket = MOCK_TICKETS.find(t => t.ticketId === ticketId)
-    if (!ticket) throw new Error("Ticket not found")
-    return delay(ticket, mockDelayMs, signal)
-  }
-
-  const res = await fetch(`${BASE_URL}/tickets/${ticketId}`, { headers: getAuthHeaders(), signal })
-  const json = await res.json()
-  return json.data
-}
-
-export async function checkin(
-  ticketId: string,
-  coords: { latitude: number; longitude: number }
-): Promise<{ checkedIn: boolean; checkedInAt: string }> {
-  if (useMock) {
-    return delay({ checkedIn: true, checkedInAt: new Date().toISOString() }, mockActionDelayMs)
-  }
-
-  const res = await fetch(`${BASE_URL}/tickets/${ticketId}/checkin`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(coords),
-  })
-  const json = await res.json()
-  if (!res.ok) throw json.error
-  return json.data
-}
-
-export async function getEventTickets(
-  eventId: string,
-  params?: { status?: "used" | "unused" | "invalid"; page?: number; limit?: number },
-  signal?: AbortSignal
-) {
-  if (useMock) {
-    const { MOCK_CHECKIN_TICKETS } = await import("../mock/tickets")
-    return delay({
-      data: {
-        summary: { used: 1, unused: 2, invalid: 0 },
-        tickets: MOCK_CHECKIN_TICKETS,
-      },
-      pagination: { page: 1, limit: 10, total: 3 },
-    }, mockDelayMs, signal)
-  }
-
-  const query = new URLSearchParams(
-    Object.entries(params ?? {})
-      .filter(([, v]) => v !== undefined)
-      .map(([k, v]) => [k, String(v)])
-  )
-  const res = await fetch(`${BASE_URL}/events/${eventId}/tickets?${query}`, {
-    headers: getAuthHeaders(),
-    signal,
-  })
-  return res.json()
-}
-</file>
-
 <file path="src/components/PageTransition.tsx">
 import { motion } from "framer-motion"
 
@@ -3301,26 +3658,42 @@ function PageTransition({ children }: Props) {
 export default PageTransition
 </file>
 
-<file path="src/config/app.config.ts">
-export const APP_CONFIG = {
-  api: {
-    accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
-    eventUrl:   import.meta.env.VITE_EVENT_API_URL   ?? "http://localhost:3000/v1",
-    txUrl:      import.meta.env.VITE_TX_API_URL      ?? "http://localhost:8002/v1",
+<file path="src/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import * as Sentry from "@sentry/react"
+import { Analytics } from "@vercel/analytics/react"
+
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  environment: import.meta.env.MODE,
+  enabled: !!import.meta.env.VITE_SENTRY_DSN,
+  tracesSampleRate: 0.1,
+  integrations: [
+    Sentry.browserTracingIntegration(),
+  ],
+})
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 2,
+    },
   },
-  auth: {
-    autoLogoutMinutes: 30,
-    tokenKey: "token",
-    roleKey: "role",
-    expiryKey: "tokenExpiry",
-  },
-  // src/config/app.config.ts
-  development: {
-    mockDelayMs: 800,
-    mockActionDelayMs: 3000,  // 報名中維持 3 秒
-    useMock: import.meta.env.VITE_USE_MOCK === "true",
-  }
-} as const
+})
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <Analytics />
+    </QueryClientProvider>
+  </StrictMode>
+)
 </file>
 
 <file path="src/mock/events.ts">
@@ -3560,6 +3933,110 @@ export const MOCK_ELIGIBILITY = {
 }
 </file>
 
+<file path="src/api/tickets.ts">
+import type { Ticket } from "../types"
+import { getAuthHeaders } from "./auth"
+import { APP_CONFIG } from "../config/app.config"
+
+const BASE_URL = APP_CONFIG.api.ticketUrl
+const { useMock, mockDelayMs, mockActionDelayMs } = APP_CONFIG.development
+
+function delay<T>(data: T, ms: number = mockDelayMs, signal?: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException("Aborted", "AbortError"))
+      return
+    }
+    const timer = setTimeout(() => resolve(data), ms)
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer)
+      reject(new DOMException("Aborted", "AbortError"))
+    })
+  })
+}
+
+export async function getTickets(
+  params?: { status?: "used" | "unused" | "invalid" },
+  signal?: AbortSignal
+): Promise<Ticket[]> {
+  if (useMock) {
+    const { MOCK_TICKETS } = await import("../mock/tickets")
+    const data = params?.status
+      ? MOCK_TICKETS.filter(t => t.status === params.status)
+      : MOCK_TICKETS
+    return delay(data, mockDelayMs, signal)
+  }
+
+  const query = new URLSearchParams(
+    Object.entries(params ?? {})
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => [k, String(v)])
+  )
+  const res = await fetch(`${BASE_URL}/tickets?${query}`, { headers: getAuthHeaders(), signal })
+  const json = await res.json()
+  return json.data
+}
+
+export async function getTicketById(ticketId: string, signal?: AbortSignal): Promise<Ticket> {
+  if (useMock) {
+    const { MOCK_TICKETS } = await import("../mock/tickets")
+    const ticket = MOCK_TICKETS.find(t => t.ticketId === ticketId)
+    if (!ticket) throw new Error("Ticket not found")
+    return delay(ticket, mockDelayMs, signal)
+  }
+
+  const res = await fetch(`${BASE_URL}/tickets/${ticketId}`, { headers: getAuthHeaders(), signal })
+  const json = await res.json()
+  return json.data
+}
+
+export async function checkin(
+  ticketId: string,
+  coords: { latitude: number; longitude: number }
+): Promise<{ checkedIn: boolean; checkedInAt: string }> {
+  if (useMock) {
+    return delay({ checkedIn: true, checkedInAt: new Date().toISOString() }, mockActionDelayMs)
+  }
+
+  const res = await fetch(`${BASE_URL}/tickets/${ticketId}/checkin`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(coords),
+  })
+  const json = await res.json()
+  if (!res.ok) throw json.error
+  return json.data
+}
+
+export async function getEventTickets(
+  eventId: string,
+  params?: { status?: "used" | "unused" | "invalid"; page?: number; limit?: number },
+  signal?: AbortSignal
+) {
+  if (useMock) {
+    const { MOCK_CHECKIN_TICKETS } = await import("../mock/tickets")
+    return delay({
+      data: {
+        summary: { used: 1, unused: 2, invalid: 0 },
+        tickets: MOCK_CHECKIN_TICKETS,
+      },
+      pagination: { page: 1, limit: 10, total: 3 },
+    }, mockDelayMs, signal)
+  }
+
+  const query = new URLSearchParams(
+    Object.entries(params ?? {})
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => [k, String(v)])
+  )
+  const res = await fetch(`${BASE_URL}/events/${eventId}/tickets?${query}`, {
+    headers: getAuthHeaders(),
+    signal,
+  })
+  return res.json()
+}
+</file>
+
 <file path="src/api/transactions.ts">
 import type { Transaction, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
@@ -3706,6 +4183,29 @@ export async function updateTransaction(
   if (!res.ok) throw json.error
   return json.data
 }
+</file>
+
+<file path="src/config/app.config.ts">
+export const APP_CONFIG = {
+  api: {
+    accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
+    eventUrl:   import.meta.env.VITE_EVENT_API_URL   ?? "http://localhost:3000/v1",
+    txUrl:      import.meta.env.VITE_TX_API_URL      ?? "http://localhost:8002/v1",
+    ticketUrl:  import.meta.env.VITE_TICKET_API_URL  ?? "http://localhost:8003/v1",
+  },
+  auth: {
+    autoLogoutMinutes: 30,
+    tokenKey: "token",
+    roleKey: "role",
+    expiryKey: "tokenExpiry",
+  },
+  // src/config/app.config.ts
+  development: {
+    mockDelayMs: 800,
+    mockActionDelayMs: 3000,  // 報名中維持 3 秒
+    useMock: import.meta.env.VITE_USE_MOCK === "true",
+  }
+} as const
 </file>
 
 <file path="src/pages/admin/CheckinPage.tsx">
@@ -4067,6 +4567,7 @@ export default ProfilePage
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -5386,90 +5887,6 @@ function LoginPage() {
 export default LoginPage
 </file>
 
-<file path="src/App.tsx">
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
-import { lazy, Suspense } from "react"
-import * as Sentry from "@sentry/react"
-import Navbar from "./components/Navbar"
-import { useAutoLogout } from "./hooks/useAutoLogout"
-
-const LoginPage = lazy(() => import("./pages/LoginPage"))
-const EventListPage = lazy(() => import("./pages/EventListPage"))
-const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
-const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"))
-const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"))
-const MyTransactionsPage = lazy(() => import("./pages/MyTransactionsPage"))
-const ProfilePage = lazy(() => import("./pages/ProfilePage"))
-const EventManagePage = lazy(() => import("./pages/admin/EventManagePage"))
-const RegistrationDetailPage = lazy(() => import("./pages/admin/RegistrationDetailPage"))
-const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
-const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
-const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
-const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
-
-// 發生錯誤時的備用畫面
-function ErrorFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-4xl mb-4">⚠️</p>
-        <p className="text-white font-semibold mb-2">發生了一些問題</p>
-        <p className="text-zinc-400 text-sm mb-6">錯誤已自動回報，請重新整理頁面</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium text-sm"
-        >
-          重新整理
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function Layout() {
-  const location = useLocation()
-  useAutoLogout()
-
-  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
-
-  return (
-    <>
-      {!hideNavbar && <Navbar />}
-      <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/auth/callback" element={<LoginPage />} />
-          <Route path="/events" element={<EventListPage />} />
-          <Route path="/events/:eventId" element={<EventDetailPage />} />
-          <Route path="/my-transactions" element={<MyTransactionsPage />} />
-          <Route path="/my-tickets" element={<MyTicketsPage />} />
-          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-          <Route path="/admin/events" element={<EventManagePage />} />
-          <Route path="/admin/events/new" element={<CreateEventPage />} />
-          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-          <Route path="/admin/users" element={<UserManagePage />} />
-          <Route path="/admin/hr" element={<HRDashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Routes>
-      </Suspense>
-    </>
-  )
-}
-
-function App() {
-  return (
-    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-      <BrowserRouter>
-        <Layout />
-      </BrowserRouter>
-    </Sentry.ErrorBoundary>
-  )
-}
-
-export default Sentry.withProfiler(App)
-</file>
-
 <file path="src/api/auth.ts">
 import type { User } from "../types"
 import { APP_CONFIG } from "../config/app.config"
@@ -5584,6 +6001,90 @@ export async function getMe(signal?: AbortSignal): Promise<User> {
     preferences: [],
   }
 }
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import { lazy, Suspense } from "react"
+import * as Sentry from "@sentry/react"
+import Navbar from "./components/Navbar"
+import { useAutoLogout } from "./hooks/useAutoLogout"
+
+const LoginPage = lazy(() => import("./pages/LoginPage"))
+const EventListPage = lazy(() => import("./pages/EventListPage"))
+const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
+const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"))
+const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"))
+const MyTransactionsPage = lazy(() => import("./pages/MyTransactionsPage"))
+const ProfilePage = lazy(() => import("./pages/ProfilePage"))
+const EventManagePage = lazy(() => import("./pages/admin/EventManagePage"))
+const RegistrationDetailPage = lazy(() => import("./pages/admin/RegistrationDetailPage"))
+const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
+const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
+const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
+const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
+
+// 發生錯誤時的備用畫面
+function ErrorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-4xl mb-4">⚠️</p>
+        <p className="text-white font-semibold mb-2">發生了一些問題</p>
+        <p className="text-zinc-400 text-sm mb-6">錯誤已自動回報，請重新整理頁面</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium text-sm"
+        >
+          重新整理
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Layout() {
+  const location = useLocation()
+  useAutoLogout()
+
+  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
+      <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<LoginPage />} />
+          <Route path="/events" element={<EventListPage />} />
+          <Route path="/events/:eventId" element={<EventDetailPage />} />
+          <Route path="/my-transactions" element={<MyTransactionsPage />} />
+          <Route path="/my-tickets" element={<MyTicketsPage />} />
+          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
+          <Route path="/admin/events" element={<EventManagePage />} />
+          <Route path="/admin/events/new" element={<CreateEventPage />} />
+          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
+          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
+          <Route path="/admin/users" element={<UserManagePage />} />
+          <Route path="/admin/hr" element={<HRDashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
+      </Suspense>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+      <BrowserRouter>
+        <Layout />
+      </BrowserRouter>
+    </Sentry.ErrorBoundary>
+  )
+}
+
+export default Sentry.withProfiler(App)
 </file>
 
 <file path="src/pages/MyTransactionsPage.tsx">

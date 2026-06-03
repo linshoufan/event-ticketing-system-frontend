@@ -9,9 +9,9 @@ const MOCK_ACCOUNTS = {
 
 // 真實環境帳號（拿到後填在這裡）
 const REAL_ACCOUNTS = {
-  employee:      { id: "YOUR_EMPLOYEE_ID", password: "YOUR_PASSWORD" },
-  admin:         { id: "YOUR_ADMIN_ID",    password: "YOUR_PASSWORD" },
-  hr:            { id: "YOUR_HR_ID",       password: "YOUR_PASSWORD" },
+  employee:      { id: "1000001", password: "password123" },
+  admin:         { id: "welfare_001",    password: "password123" },
+  hr:            { id: "hr_001",       password: "password123" },
 }
 
 // 根據環境選帳號
@@ -40,7 +40,7 @@ test.describe("登入流程", () => {
     await page.fill('input[autocomplete="current-password"]', admin.password)
     await page.click('button[type="submit"]')
     await expect(page).toHaveURL(/\/admin\/events$/)
-    await expect(page.locator("text=活動管理")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "活動管理" })).toBeVisible()
   })
 
   test("HR 登入成功，跳轉到統計頁面", async ({ page, baseURL }) => {
@@ -101,9 +101,20 @@ test.describe("登出流程", () => {
     await expect(page.locator("text=企業活動訂票系統")).toBeVisible()
   })
 
-  test("登出後無法存取受保護頁面", async ({ page }) => {
+  test("登出後無法存取受保護頁面", async ({ page, baseURL }) => {
+    const { employee } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', employee.id)
+    await page.fill('input[autocomplete="current-password"]', employee.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/events$/)
+
     await page.click("text=登出")
+    await expect(page).toHaveURL("/")
+
     await page.goto("/events")
+    await page.waitForTimeout(1000)  // ← 等路由保護觸發
     await expect(page).toHaveURL("/")
   })
 

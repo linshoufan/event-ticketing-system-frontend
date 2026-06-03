@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { lazy, Suspense } from "react"
 import * as Sentry from "@sentry/react"
 import Navbar from "./components/Navbar"
@@ -18,6 +18,14 @@ const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
 const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
 const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
 
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem("token")
+  if (!token) {
+    return <Navigate to="/" replace />
+  }
+  return <>{children}</>
+}
 // 發生錯誤時的備用畫面
 function ErrorFallback() {
   return (
@@ -50,18 +58,20 @@ function Layout() {
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<LoginPage />} />
           <Route path="/auth/callback" element={<LoginPage />} />
-          <Route path="/events" element={<EventListPage />} />
-          <Route path="/events/:eventId" element={<EventDetailPage />} />
-          <Route path="/my-transactions" element={<MyTransactionsPage />} />
-          <Route path="/my-tickets" element={<MyTicketsPage />} />
-          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-          <Route path="/admin/events" element={<EventManagePage />} />
-          <Route path="/admin/events/new" element={<CreateEventPage />} />
-          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-          <Route path="/admin/users" element={<UserManagePage />} />
-          <Route path="/admin/hr" element={<HRDashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+
+          {/* 以下都需要登入 */}
+          <Route path="/events" element={<PrivateRoute><EventListPage /></PrivateRoute>} />
+          <Route path="/events/:eventId" element={<PrivateRoute><EventDetailPage /></PrivateRoute>} />
+          <Route path="/my-transactions" element={<PrivateRoute><MyTransactionsPage /></PrivateRoute>} />
+          <Route path="/my-tickets" element={<PrivateRoute><MyTicketsPage /></PrivateRoute>} />
+          <Route path="/my-tickets/:ticketId" element={<PrivateRoute><TicketDetailPage /></PrivateRoute>} />
+          <Route path="/admin/events" element={<PrivateRoute><EventManagePage /></PrivateRoute>} />
+          <Route path="/admin/events/new" element={<PrivateRoute><CreateEventPage /></PrivateRoute>} />
+          <Route path="/admin/events/:eventId/registrations" element={<PrivateRoute><RegistrationDetailPage /></PrivateRoute>} />
+          <Route path="/admin/events/:eventId/checkin" element={<PrivateRoute><CheckinPage /></PrivateRoute>} />
+          <Route path="/admin/users" element={<PrivateRoute><UserManagePage /></PrivateRoute>} />
+          <Route path="/admin/hr" element={<PrivateRoute><HRDashboardPage /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         </Routes>
       </Suspense>
     </>
