@@ -2,37 +2,20 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import PageTransition from "../../components/PageTransition"
 import { StatCardSkeleton } from "../../components/Skeleton"
-import { APP_CONFIG } from "../../config/app.config"
+import { getEvents } from "../../api/events"
+import { getEventRegistrations } from "../../api/transactions"
+import { getEventTickets } from "../../api/tickets"
 
-const MOCK_HR_STATS = [
-  {
-    eventId: "ev_001",
-    eventName: "夏日烤肉趴",
-    ticketLimit: 50,
-    totalConfirmed: 38,
-    totalWaitlist: 5,
-    totalCancelled: 4,
-    totalCheckedIn: 20,
-  },
-  {
-    eventId: "ev_002",
-    eventName: "音樂欣賞之夜",
-    ticketLimit: null,
-    totalConfirmed: 120,
-    totalWaitlist: 0,
-    totalCancelled: 10,
-    totalCheckedIn: 98,
-  },
-  {
-    eventId: "ev_003",
-    eventName: "家庭日活動",
-    ticketLimit: 100,
-    totalConfirmed: 100,
-    totalWaitlist: 15,
-    totalCancelled: 8,
-    totalCheckedIn: 0,
-  },
-]
+// 前端自己定義統計資料的型別
+interface EventStat {
+  eventId: string
+  eventName: string
+  ticketLimit: number | null
+  totalConfirmed: number
+  totalWaitlist: number
+  totalCancelled: number
+  totalCheckedIn: number
+}
 
 function StatBar({ value, total, color }: { value: number; total: number; color: string }) {
   const pct = total > 0 ? Math.min(Math.round((value / total) * 100), 100) : 0
@@ -49,16 +32,53 @@ function StatBar({ value, total, color }: { value: number; total: number; color:
 function HRDashboardPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<typeof MOCK_HR_STATS>([])
+  const [stats, setStats] = useState<EventStat[]>([])
   const [search, setSearch] = useState("")
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    setTimeout(() => {
-      setStats(MOCK_HR_STATS)
-      setLoading(false)
-    }, APP_CONFIG.development.mockDelayMs)
+    const controller = new AbortController()
+    setLoading(true)
+    setError(false)
+
+    // Step 1：先拿所有活動清單
+    getEvents(undefined, controller.signal)
+      .then(async (eventsRes) => {
+        const events = eventsRes.data
+
+        // Step 2：對每個活動，同時打 registrations + tickets 兩支 API
+        const statsPromises = events.map(async (event) => {
+          const [regData, ticketData] = await Promise.all([
+            getEventRegistrations(event.eventId, undefined, controller.signal),
+            getEventTickets(event.eventId, undefined, controller.signal),
+          ])
+
+          return {
+            eventId: event.eventId,
+            eventName: event.name,
+            ticketLimit: event.ticketLimit,
+            totalConfirmed: regData.summary.totalConfirmed,
+            totalWaitlist: regData.summary.totalWaitlist,
+            totalCancelled: regData.summary.totalCancelled,
+            totalCheckedIn: ticketData.data.summary.used,   // tickets API 的 used 就是出席數
+          } satisfies EventStat
+        })
+
+        // 等所有活動的資料都回來
+        const allStats = await Promise.all(statsPromises)
+        setStats(allStats)
+        setLoading(false)
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return
+        setError(true)
+        setLoading(false)
+      })
+
+    return () => controller.abort()
   }, [])
 
+  // 以下是前端自己算的加總
   const totalEvents = stats.length
   const totalConfirmed = stats.reduce((sum, s) => sum + s.totalConfirmed, 0)
   const totalCheckedIn = stats.reduce((sum, s) => sum + s.totalCheckedIn, 0)
@@ -68,16 +88,21 @@ function HRDashboardPage() {
 
   const filtered = stats.filter(s => s.eventName.includes(search))
 
+  if (error) return (
+    <div className="text-center py-16 text-zinc-500">載入失敗，請重新整理</div>
+  )
+
   return (
     <PageTransition>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-white mb-6">統計報表</h1>
 
+        {/* 整體加總：前端算 */}
         <div className="grid grid-cols-4 gap-3 mb-8">
           {[
-            { label: "活動總數", value: totalEvents, color: "text-white" },
-            { label: "總報名人數", value: totalConfirmed, color: "text-emerald-400" },
-            { label: "總出席人數", value: totalCheckedIn, color: "text-blue-400" },
+            { label: "活動總數",   value: totalEvents,    color: "text-white" },
+            { label: "總報名人數", value: totalConfirmed,  color: "text-emerald-400" },
+            { label: "總出席人數", value: totalCheckedIn,  color: "text-blue-400" },
             { label: "平均出席率", value: `${avgCheckinRate}%`, color: "text-amber-400" },
           ].map(item => (
             <div key={item.label} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
@@ -103,6 +128,7 @@ function HRDashboardPage() {
             {filtered.map(stat => {
               const cap = stat.ticketLimit ?? stat.totalConfirmed
 
+              // 以下顏色判斷：前端算
               const waitlistColor = stat.ticketLimit && stat.totalWaitlist > stat.ticketLimit
                 ? "text-red-400"
                 : "text-amber-400"

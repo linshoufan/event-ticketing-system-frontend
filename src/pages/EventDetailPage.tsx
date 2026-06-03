@@ -93,7 +93,18 @@ function EventDetailPage() {
   const handleRegister = useDebounce(handleRegisterAction, 500)
 
   function getActionButton() {
-    if (!eligibility || !event) return null
+    if (!event) return null
+
+    if (!eligibility) {
+      return (
+        <button
+          disabled
+          className="w-full py-3 rounded-xl bg-zinc-700 disabled:opacity-50 text-zinc-400 font-semibold"
+        >
+          載入中...
+        </button>
+      )
+    }
 
     if (alreadyRegistered) {
       return (
@@ -211,6 +222,7 @@ function EventDetailPage() {
             <div>
               <label className="text-zinc-400 text-sm block mb-2">飲食需求</label>
               <select
+                disabled={!eligibility}
                 value={dietType ?? ""}
                 onChange={e => setDietType(e.target.value as "veg" | "non-veg" | null || null)}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-zinc-500"
@@ -224,6 +236,7 @@ function EventDetailPage() {
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
+                disabled={!eligibility}
                 checked={selfDriving}
                 onChange={e => setSelfDriving(e.target.checked)}
                 className="w-4 h-4 rounded"

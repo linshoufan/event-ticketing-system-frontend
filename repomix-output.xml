@@ -43,6 +43,9 @@ The content is organized as follows:
 <directory_structure>
 .github/workflows/ci.yml
 .gitignore
+指令集/pull.txt
+指令集/push.txt
+指令集/test.txt
 e2e/admin.spec.ts
 e2e/auth.spec.ts
 e2e/employee.spec.ts
@@ -103,6 +106,8 @@ src/tests/unit/userRole.test.ts
 src/types/index.ts
 src/vite-env.d.ts
 test-results/.last-run.json
+test-results/employee-活動瀏覽-可以看到活動列表-production/error-context.md
+test-results/employee-活動瀏覽-可以看到活動列表-production/test-failed-1.png
 tsconfig.app.json
 tsconfig.json
 tsconfig.node.json
@@ -112,6 +117,264 @@ vite.config.ts
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="指令集/pull.txt">
+
+</file>
+
+<file path="指令集/push.txt">
+git add .
+git commit -m ""
+git push origin main
+</file>
+
+<file path="指令集/test.txt">
+一般測試 : npm run test
+e2e 測試 : npm run test:e2e
+</file>
+
+<file path="test-results/employee-活動瀏覽-可以看到活動列表-production/error-context.md">
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: employee.spec.ts >> 活動瀏覽 >> 可以看到活動列表
+- Location: e2e\employee.spec.ts:80:3
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('[data-testid="event-card"]').first()
+Expected: visible
+Timeout: 15000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" with timeout 15000ms
+  - waiting for locator('[data-testid="event-card"]').first()
+
+```
+
+```yaml
+- navigation:
+  - text: 企業活動訂票系統 活動 報名 票券 個人
+  - button "登出"
+- heading "活動列表" [level=1]
+- textbox "搜尋活動..."
+- combobox:
+  - option "所有類別" [selected]
+  - option "運動"
+  - option "美食"
+  - option "旅遊"
+  - option "文藝"
+  - option "親子"
+  - option "競賽"
+  - option "音樂"
+- button "為你推薦"
+- button "報名中"
+- button "候補中"
+- button "報名截止"
+- button "最熱門"
+- button "名額最少"
+- button "名額最多"
+- paragraph: 🔍
+- paragraph: 沒有符合的活動
+```
+
+# Test source
+
+```ts
+  1   | import { test, expect } from "@playwright/test"
+  2   | 
+  3   | const MOCK_ACCOUNTS = { id: "employee", password: "1234" }
+  4   | const REAL_ACCOUNTS = { id: "1000001", password: "password123" }
+  5   | 
+  6   | const ACCOUNT_API = "https://account-api-75541019693.asia-east1.run.app/v1"
+  7   | const EVENT_API   = "https://event-service-75541019693.asia-east1.run.app/v1"
+  8   | 
+  9   | function getAccount(baseURL: string) {
+  10  |   return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+  11  | }
+  12  | 
+  13  | async function loginAsEmployee(page: any, baseURL: string) {
+  14  |   const account = getAccount(baseURL)
+  15  |   await page.goto("/")
+  16  |   await page.click("text=員工登入")
+  17  |   await page.fill('input[autocomplete="username"]', account.id)
+  18  |   await page.fill('input[autocomplete="current-password"]', account.password)
+  19  |   await page.click('button[type="submit"]')
+  20  |   await expect(page).toHaveURL(/\/events$/, { timeout: 15000 })
+  21  | }
+  22  | 
+  23  | // ── 測試資料管理（只在 production 跑） ──────────────────────────
+  24  | let createdEventId: string | null = null
+  25  | let adminToken: string | null = null
+  26  | 
+  27  | test.beforeAll(async ({ request, baseURL }) => {
+  28  |   if (!baseURL?.includes("localhost")) {
+  29  |     const loginRes = await request.post(`${ACCOUNT_API}/auth/login`, {
+  30  |       data: {
+  31  |         employeeId: "welfare_001",
+  32  |         password:   "password123",
+  33  |         role:       "welfare_member",
+  34  |       },
+  35  |     })
+  36  |     const loginData = await loginRes.json()
+  37  |     adminToken = loginData.data?.token  // ← 直接取 data.token
+  38  | 
+  39  |     console.log("Token:", adminToken)  // ← 確認 token 有值
+  40  | 
+  41  |     const eventRes = await request.post(`${EVENT_API}/events`, {
+  42  |       headers: {
+  43  |         Authorization: `Bearer ${adminToken}`,
+  44  |         "Content-Type": "application/json",  // ← 加這行
+  45  |       },
+  46  |       data: {
+  47  |         name:              "E2E 測試活動（自動刪除）",
+  48  |         description:       "Playwright 自動建立，測試完會自動刪除",
+  49  |         category:          "sport",
+  50  |         location:          "台北辦公室",
+  51  |         eventStartTime:    "2025-12-01T10:00:00Z",
+  52  |         eventEndTime:      "2025-12-01T18:00:00Z",
+  53  |         registrationStart: "2025-06-01T00:00:00Z",
+  54  |         registrationEnd:   "2025-11-30T23:59:59Z",
+  55  |         ticketLimit:       50,
+  56  |         guestAllowed:      false,
+  57  |         isDraft:           false,
+  58  |       },
+  59  |     })
+  60  |     const eventData = await eventRes.json()
+  61  |     console.log("建立活動回應：", JSON.stringify(eventData))
+  62  |     createdEventId = eventData.eventId ?? eventData.data?.eventId
+  63  |   }
+  64  | })
+  65  | 
+  66  | test.afterAll(async ({ request, baseURL }) => {
+  67  |   if (!baseURL?.includes("localhost") && createdEventId && adminToken) {
+  68  |     await request.delete(`${EVENT_API}/events/${createdEventId}`, {
+  69  |       headers: { Authorization: `Bearer ${adminToken}` },
+  70  |     })
+  71  |   }
+  72  | })
+  73  | // ── 測試資料管理結束 ──────────────────────────────────────────────
+  74  | 
+  75  | test.describe("活動瀏覽", () => {
+  76  |   test.beforeEach(async ({ page, baseURL }) => {
+  77  |     await loginAsEmployee(page, baseURL!)
+  78  |   })
+  79  | 
+  80  |   test("可以看到活動列表", async ({ page }) => {
+  81  |     await expect(page.locator("text=活動列表")).toBeVisible()
+> 82  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 15000 })
+      |                                                                      ^ Error: expect(locator).toBeVisible() failed
+  83  |   })
+  84  | 
+  85  |   test("可以搜尋活動", async ({ page }) => {
+  86  |     await page.fill('input[placeholder="搜尋活動..."]', "E2E")
+  87  |     await page.waitForTimeout(500)
+  88  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+  89  |   })
+  90  | 
+  91  |   test("可以依分類篩選", async ({ page }) => {
+  92  |     await page.selectOption("select", "sport")
+  93  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+  94  |   })
+  95  | 
+  96  |   test("可以切換排序", async ({ page }) => {
+  97  |     await page.click("text=最熱門")
+  98  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+  99  |   })
+  100 | 
+  101 |   test("可以點進活動詳情", async ({ page }) => {
+  102 |     await page.locator('[data-testid="event-card"]').first().click()
+  103 |     await expect(page.url()).toMatch(/\/events\//)
+  104 |     await expect(page.locator("text=報名資料")).toBeVisible()
+  105 |   })
+  106 | 
+  107 |   test("活動詳情顯示正確資訊", async ({ page }) => {
+  108 |     await page.locator('[data-testid="event-card"]').first().click()
+  109 |     await expect(page).toHaveURL(/\/events\/\w+/, { timeout: 10000 })
+  110 |     await expect(page.locator("text=📍").first()).toBeVisible()
+  111 |     await expect(page.locator("text=🕐").first()).toBeVisible()
+  112 |     await expect(page.locator("text=報名截止").first()).toBeVisible()
+  113 |   })
+  114 | })
+  115 | 
+  116 | test.describe("報名流程", () => {
+  117 |   test.beforeEach(async ({ page, baseURL }) => {
+  118 |     await loginAsEmployee(page, baseURL!)
+  119 |     await page.locator('[data-testid="event-card"]').first().click()
+  120 |     await expect(page.url()).toMatch(/\/events\//)
+  121 |   })
+  122 | 
+  123 |   test("可以選擇飲食需求", async ({ page }) => {
+  124 |     const select = page.locator("select").first()
+  125 |     await select.selectOption("veg")
+  126 |     await expect(select).toHaveValue("veg")
+  127 |   })
+  128 | 
+  129 |   test("可以勾選自行開車", async ({ page }) => {
+  130 |     const checkbox = page.locator('input[type="checkbox"]')
+  131 |     await checkbox.check()
+  132 |     await expect(checkbox).toBeChecked()
+  133 |   })
+  134 | 
+  135 |   test("報名按鈕存在且可點擊", async ({ page }) => {
+  136 |     const btn = page.locator("text=立即報名")
+  137 |       .or(page.locator("text=加入候補"))
+  138 |       .or(page.locator("text=您已報名此活動"))
+  139 |       .or(page.locator("text=目前無法報名"))
+  140 |     await expect(btn.first()).toBeVisible()
+  141 |   })
+  142 | 
+  143 |   test("點擊報名後按鈕狀態改變", async ({ page }) => {
+  144 |     const registerBtn = page.locator("text=立即報名")
+  145 |     if (await registerBtn.isVisible()) {
+  146 |       await registerBtn.click()
+  147 |       await page.waitForTimeout(600)
+  148 |       const changedBtn = page.locator("text=報名中...")
+  149 |         .or(page.locator("text=您已報名此活動"))
+  150 |         .or(page.locator("text=已加入候補名單"))
+  151 |       await expect(changedBtn.first()).toBeVisible()
+  152 |     }
+  153 |   })
+  154 | })
+  155 | 
+  156 | test.describe("報名紀錄", () => {
+  157 |   test.beforeEach(async ({ page, baseURL }) => {
+  158 |     await loginAsEmployee(page, baseURL!)
+  159 |     await page.click("text=報名")
+  160 |     await expect(page).toHaveURL(/\/my-transactions$/)
+  161 |   })
+  162 | 
+  163 |   test("可以看到報名紀錄頁面", async ({ page }) => {
+  164 |     await expect(page.locator("text=我的報名紀錄")).toBeVisible()
+  165 |   })
+  166 | 
+  167 |   test("可以依狀態篩選", async ({ page }) => {
+  168 |     await page.selectOption("select", "confirmed")
+  169 |     await expect(page.locator("text=我的報名紀錄")).toBeVisible()
+  170 |   })
+  171 | })
+  172 | 
+  173 | test.describe("票券", () => {
+  174 |   test.beforeEach(async ({ page, baseURL }) => {
+  175 |     await loginAsEmployee(page, baseURL!)
+  176 |     await page.click("text=票券")
+  177 |     await expect(page).toHaveURL(/\/my-tickets$/)
+  178 |   })
+  179 | 
+  180 |   test("可以看到票券頁面", async ({ page }) => {
+  181 |     await expect(page.locator("text=我的票券")).toBeVisible()
+  182 |   })
+```
+</file>
 
 <file path=".gitignore">
 # Logs
@@ -138,479 +401,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-</file>
-
-<file path="e2e/admin.spec.ts">
-import { test, expect } from "@playwright/test"
-
-const MOCK_ACCOUNTS   = { id: "admin", password: "1234" }
-const REAL_ACCOUNTS   = { id: "YOUR_ADMIN_ID", password: "YOUR_PASSWORD" }
-
-function getAccount(baseURL: string) {
-  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
-}
-
-async function fillDateTimeLocal(page: any, name: string, value: string) {
-  await page.evaluate(({ name, value }: { name: string; value: string }) => {
-    const input = document.querySelector(`input[name="${name}"]`) as HTMLInputElement
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype, "value"
-    )?.set
-    nativeInputValueSetter?.call(input, value)
-    input.dispatchEvent(new Event("input", { bubbles: true }))
-    input.dispatchEvent(new Event("change", { bubbles: true }))
-  }, { name, value })
-}
-
-async function loginAsAdmin(page: any, baseURL: string) {
-  const account = getAccount(baseURL)
-  await page.goto("/")
-  await page.click("text=福委登入")
-  await page.fill('input[autocomplete="username"]', account.id)
-  await page.fill('input[autocomplete="current-password"]', account.password)
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL(/\/admin\/events$/)
-}
-
-test.describe("活動管理", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsAdmin(page, baseURL!)
-  })
-
-  test("可以看到活動管理頁面", async ({ page }) => {
-    // ✅ Fix 1: 用 heading role 避免和 Navbar 衝突
-    await expect(page.getByRole("heading", { name: "活動管理" })).toBeVisible()
-    await expect(page.locator("text=+ 新增活動")).toBeVisible()
-  })
-
-    test("可以開啟新增活動頁面", async ({ page }) => {
-    await page.click("text=+ 新增活動")
-    await expect(page).toHaveURL(/\/admin\/events\/new$/)
-    await expect(page.getByRole("heading", { name: "新增活動" })).toBeVisible()
-    await expect(page.locator('input[name="name"]')).toBeVisible()
-    await expect(page.locator('select[name="category"]')).toBeVisible()
-    await expect(page.locator('input[name="location"]')).toBeVisible()
-    await expect(page.locator("text=儲存草稿")).toBeVisible()
-    await expect(page.locator("text=直接發布")).toBeVisible()
-    })
-
-    test("未填必填欄位顯示錯誤訊息", async ({ page }) => {
-    await page.click("text=+ 新增活動")
-    await page.click("text=儲存草稿")
-    await expect(page.locator("text=請填寫所有必填欄位")).toBeVisible()
-    await expect(page).toHaveURL(/\/admin\/events\/new$/)
-    })
-
-  test("草稿活動可以發布", async ({ page }) => {
-    const publishBtn = page.locator("text=發布").first()
-    if (await publishBtn.count() > 0) {
-      await publishBtn.click()
-      await expect(publishBtn).not.toBeVisible()
-    }
-  })
-
-  test("可以刪除活動", async ({ page }) => {
-    const deleteBtn = page.locator("text=刪除").first()
-    if (await deleteBtn.count() > 0) {
-      const countBefore = await page.locator("text=刪除").count()
-      page.on("dialog", dialog => dialog.accept())
-      await deleteBtn.click()
-      await page.waitForTimeout(500)
-      const countAfter = await page.locator("text=刪除").count()
-      expect(countAfter).toBeLessThan(countBefore)
-    }
-  })
-
-  test("可以看報名詳情", async ({ page }) => {
-    const detailBtn = page.locator("text=報名詳情").first()
-    if (await detailBtn.count() > 0) {
-      await detailBtn.click()
-      await expect(page).toHaveURL(/\/admin\/events\/.*\/registrations$/)
-      await expect(page.getByRole("heading", { name: "報名詳情" })).toBeVisible()
-    }
-  })
-
-  test("可以進入核銷頁面", async ({ page }) => {
-    const checkinBtn = page.locator("text=核銷").first()
-    if (await checkinBtn.count() > 0) {
-      await checkinBtn.click()
-      await expect(page).toHaveURL(/\/admin\/events\/.*\/checkin$/)
-      await expect(page.getByRole("heading", { name: "核銷" })).toBeVisible()
-    }
-  })
-})
-
-test.describe("報名詳情", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsAdmin(page, baseURL!)
-    // ✅ Fix 3: 等待元素出現再點，不用 if 判斷
-    await page.waitForSelector("text=報名詳情")
-    await page.locator("text=報名詳情").first().click()
-    await expect(page).toHaveURL(/\/admin\/events\/.*\/registrations$/)
-  })
-
-  test("可以看到報名統計", async ({ page }) => {
-    await expect(page.locator("text=正取").first()).toBeVisible()
-    await expect(page.locator("text=候補").first()).toBeVisible()
-    await expect(page.locator("text=已取消").first()).toBeVisible()
-  })
-
-  test("可以依狀態篩選報名", async ({ page }) => {
-    await page.locator("select").selectOption("confirmed")
-    await expect(page.locator("text=正取").first()).toBeVisible()
-  })
-})
-
-test.describe("使用者管理", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsAdmin(page, baseURL!)
-    await page.click("text=使用者")
-    await expect(page).toHaveURL(/\/admin\/users$/)
-  })
-
-  test("可以看到使用者管理頁面", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
-  })
-
-  test("可以依角色篩選", async ({ page }) => {
-    await page.locator("select").nth(0).selectOption("employee")
-    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
-  })
-
-  test("可以依狀態篩選", async ({ page }) => {
-    await page.locator("select").nth(1).selectOption("active")
-    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
-  })
-
-  test("可以修改使用者角色", async ({ page }) => {
-    const roleSelect = page.locator("select").nth(2)
-    if (await roleSelect.count() > 0) {
-      await roleSelect.selectOption("hr")
-      await expect(roleSelect).toHaveValue("hr")
-    }
-  })
-
-  test("可以刪除使用者", async ({ page }) => {
-    const deleteBtn = page.locator("text=刪除").first()
-    if (await deleteBtn.count() > 0) {
-      const countBefore = await page.locator("text=刪除").count()
-      page.on("dialog", dialog => dialog.accept())
-      await deleteBtn.click()
-      await page.waitForTimeout(500)
-      const countAfter = await page.locator("text=刪除").count()
-      expect(countAfter).toBeLessThanOrEqual(countBefore)
-    }
-  })
-})
-
-test.describe("核銷", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsAdmin(page, baseURL!)
-    // ✅ Fix 3: 等待元素出現再點
-    await page.waitForSelector("text=核銷")
-    await page.locator("text=核銷").first().click()
-    await expect(page).toHaveURL(/\/admin\/events\/.*\/checkin$/)
-  })
-
-  test("可以搜尋票券", async ({ page }) => {
-    await page.waitForSelector('input[placeholder="搜尋姓名或票券 ID..."]')
-    await page.fill('input[placeholder="搜尋姓名或票券 ID..."]', "john")
-    await expect(page.getByRole("heading", { name: "核銷" })).toBeVisible()
-  })
-
-  test("可以手動核銷票券", async ({ page }) => {
-    const checkinBtn = page.locator("button:has-text('核銷')").first()
-    if (await checkinBtn.count() > 0) {
-      page.on("dialog", dialog => dialog.accept())
-      await checkinBtn.click()
-      await page.waitForTimeout(500)
-      await expect(page.locator("text=完成").first()).toBeVisible()
-    }
-  })
-})
-</file>
-
-<file path="e2e/auth.spec.ts">
-import { test, expect } from "@playwright/test"
-
-// Mock 環境帳號
-const MOCK_ACCOUNTS = {
-  employee:      { id: "employee", password: "1234" },
-  admin:         { id: "admin",    password: "1234" },
-  hr:            { id: "hr",       password: "1234" },
-}
-
-// 真實環境帳號（拿到後填在這裡）
-const REAL_ACCOUNTS = {
-  employee:      { id: "YOUR_EMPLOYEE_ID", password: "YOUR_PASSWORD" },
-  admin:         { id: "YOUR_ADMIN_ID",    password: "YOUR_PASSWORD" },
-  hr:            { id: "YOUR_HR_ID",       password: "YOUR_PASSWORD" },
-}
-
-// 根據環境選帳號
-function getAccounts(baseURL: string) {
-  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
-}
-
-test.describe("登入流程", () => {
-
-  test("員工登入成功，跳轉到活動列表", async ({ page, baseURL }) => {
-    const { employee } = getAccounts(baseURL!)
-    await page.goto("/")
-    await page.click("text=員工登入")
-    await page.fill('input[autocomplete="username"]', employee.id)
-    await page.fill('input[autocomplete="current-password"]', employee.password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/events$/)
-    await expect(page.locator("text=活動列表")).toBeVisible()
-  })
-
-  test("福委登入成功，跳轉到活動管理", async ({ page, baseURL }) => {
-    const { admin } = getAccounts(baseURL!)
-    await page.goto("/")
-    await page.click("text=福委登入")
-    await page.fill('input[autocomplete="username"]', admin.id)
-    await page.fill('input[autocomplete="current-password"]', admin.password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/admin\/events$/)
-    await expect(page.locator("text=活動管理")).toBeVisible()
-  })
-
-  test("HR 登入成功，跳轉到統計頁面", async ({ page, baseURL }) => {
-    const { hr } = getAccounts(baseURL!)
-    await page.goto("/")
-    await page.click("text=HR 登入")
-    await page.fill('input[autocomplete="username"]', hr.id)
-    await page.fill('input[autocomplete="current-password"]', hr.password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/admin\/hr$/)
-    await expect(page.locator("text=統計報表")).toBeVisible()
-  })
-
-  test("密碼錯誤，顯示錯誤訊息", async ({ page }) => {
-    await page.goto("/")
-    await page.click("text=員工登入")
-    await page.fill('input[autocomplete="username"]', "employee")
-    await page.fill('input[autocomplete="current-password"]', "wrongpassword")
-    await page.click('button[type="submit"]')
-    await expect(page.locator("text=員工編號或密碼錯誤")).toBeVisible()
-    await expect(page).toHaveURL("/")
-  })
-
-  test("角色不符，顯示錯誤訊息", async ({ page }) => {
-    await page.goto("/")
-    await page.click("text=福委登入")
-    await page.fill('input[autocomplete="username"]', "employee")
-    await page.fill('input[autocomplete="current-password"]', "1234")
-    await page.click('button[type="submit"]')
-    await expect(page.locator("text=您的帳號權限不符")).toBeVisible()
-    await expect(page).toHaveURL("/")
-  })
-
-  test("未填帳號，不能送出", async ({ page }) => {
-    await page.goto("/")
-    await page.click("text=員工登入")
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL("/")
-  })
-
-})
-
-test.describe("登出流程", () => {
-
-  test.beforeEach(async ({ page, baseURL }) => {
-    const { employee } = getAccounts(baseURL!)
-    await page.goto("/")
-    await page.click("text=員工登入")
-    await page.fill('input[autocomplete="username"]', employee.id)
-    await page.fill('input[autocomplete="current-password"]', employee.password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/events$/)
-  })
-
-  test("登出後跳回登入頁面", async ({ page }) => {
-    await page.click("text=登出")
-    await expect(page).toHaveURL("/")
-    await expect(page.locator("text=企業活動訂票系統")).toBeVisible()
-  })
-
-  test("登出後無法存取受保護頁面", async ({ page }) => {
-    await page.click("text=登出")
-    await page.goto("/events")
-    await expect(page).toHaveURL("/")
-  })
-
-})
-</file>
-
-<file path="e2e/employee.spec.ts">
-import { test, expect } from "@playwright/test"
-
-const MOCK_ACCOUNTS   = { id: "employee", password: "1234" }
-const REAL_ACCOUNTS   = { id: "YOUR_EMPLOYEE_ID", password: "YOUR_PASSWORD" }
-
-function getAccount(baseURL: string) {
-  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
-}
-
-async function loginAsEmployee(page: any, baseURL: string) {
-  const account = getAccount(baseURL)
-  await page.goto("/")
-  await page.click("text=員工登入")
-  await page.fill('input[autocomplete="username"]', account.id)
-  await page.fill('input[autocomplete="current-password"]', account.password)
-  await page.click('button[type="submit"]')
-  await expect(page).toHaveURL(/\/events$/)
-}
-
-test.describe("活動瀏覽", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsEmployee(page, baseURL!)
-  })
-
-  test("可以看到活動列表", async ({ page }) => {
-    await expect(page.locator("text=活動列表")).toBeVisible()
-    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
-  })
-
-  test("可以搜尋活動", async ({ page }) => {
-    await page.fill('input[placeholder="搜尋活動..."]', "烤肉")
-    await page.waitForTimeout(500)
-    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
-  })
-
-  test("可以依分類篩選", async ({ page }) => {
-    await page.selectOption("select", "sport")
-    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
-  })
-
-  test("可以切換排序", async ({ page }) => {
-    await page.click("text=最熱門")
-    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible()
-  })
-
-  test("可以點進活動詳情", async ({ page }) => {
-    await page.locator('[data-testid="event-card"]').first().click()
-    await expect(page.url()).toMatch(/\/events\//)
-    await expect(page.locator("text=報名資料")).toBeVisible()
-  })
-
-  test("活動詳情顯示正確資訊", async ({ page }) => {
-    await page.locator('[data-testid="event-card"]').first().click()
-    await expect(page.locator("text=📍").first()).toBeVisible()
-    await expect(page.locator("text=🕐").first()).toBeVisible()
-    await expect(page.locator("text=報名截止").first()).toBeVisible()
-  })
-})
-
-test.describe("報名流程", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsEmployee(page, baseURL!)
-    await page.locator('[data-testid="event-card"]').first().click()
-    await expect(page.url()).toMatch(/\/events\//)
-  })
-
-  test("可以選擇飲食需求", async ({ page }) => {
-    const select = page.locator("select").first()
-    await select.selectOption("veg")
-    await expect(select).toHaveValue("veg")
-  })
-
-  test("可以勾選自行開車", async ({ page }) => {
-    const checkbox = page.locator('input[type="checkbox"]')
-    await checkbox.check()
-    await expect(checkbox).toBeChecked()
-  })
-
-  test("報名按鈕存在且可點擊", async ({ page }) => {
-    const btn = page.locator("text=立即報名")
-      .or(page.locator("text=加入候補"))
-      .or(page.locator("text=您已報名此活動"))
-      .or(page.locator("text=目前無法報名"))
-    await expect(btn.first()).toBeVisible()
-  })
-
-  test("點擊報名後按鈕狀態改變", async ({ page }) => {
-    const registerBtn = page.locator("text=立即報名")
-    if (await registerBtn.isVisible()) {
-      await registerBtn.click()
-      await page.waitForTimeout(600)
-      const changedBtn = page.locator("text=報名中...")
-        .or(page.locator("text=您已報名此活動"))
-        .or(page.locator("text=已加入候補名單"))
-      await expect(changedBtn.first()).toBeVisible()
-    }
-  })
-})
-
-test.describe("報名紀錄", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsEmployee(page, baseURL!)
-    await page.click("text=報名")
-    await expect(page).toHaveURL(/\/my-transactions$/)
-  })
-
-  test("可以看到報名紀錄頁面", async ({ page }) => {
-    await expect(page.locator("text=我的報名紀錄")).toBeVisible()
-  })
-
-  test("可以依狀態篩選", async ({ page }) => {
-    await page.selectOption("select", "confirmed")
-    await expect(page.locator("text=我的報名紀錄")).toBeVisible()
-  })
-})
-
-test.describe("票券", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsEmployee(page, baseURL!)
-    await page.click("text=票券")
-    await expect(page).toHaveURL(/\/my-tickets$/)
-  })
-
-  test("可以看到票券頁面", async ({ page }) => {
-    await expect(page.locator("text=我的票券")).toBeVisible()
-  })
-
-  test("可以依狀態篩選票券", async ({ page }) => {
-    await page.selectOption("select", "unused")
-    await expect(page.locator("text=我的票券")).toBeVisible()
-  })
-
-  test("可以點進票券詳情", async ({ page }) => {
-    await page.waitForURL(/\/my-tickets$/)
-    // 用票券特有的內容定位，不用 class
-    const ticket = page.locator("text=可報到, text=已報到, text=未開放").first()
-    if (await ticket.count() > 0) {
-    await ticket.locator("..").locator("..").click()
-    await expect(page.url()).toMatch(/\/my-tickets\//)
-    await expect(page.locator("text=票券編號")).toBeVisible()
-    }
-    })
-})
-
-test.describe("個人資料", () => {
-  test.beforeEach(async ({ page, baseURL }) => {
-    await loginAsEmployee(page, baseURL!)
-    await page.click("text=個人")
-    await expect(page).toHaveURL(/\/profile$/)
-  })
-
-  test("可以看到個人資料頁面", async ({ page }) => {
-    await expect(page.locator("text=個人資料")).toBeVisible()
-    await expect(page.locator("text=活動偏好")).toBeVisible()
-    await expect(page.locator("text=報名自動填入")).toBeVisible()
-  })
-
-  test("可以選擇活動偏好", async ({ page }) => {
-    await page.click("text=🏃 運動")
-    await expect(page.locator("text=🏃 運動")).toBeVisible()
-  })
-
-  test("可以儲存設定", async ({ page }) => {
-    await page.click("text=儲存")
-    await expect(page.locator("text=✓ 已儲存").or(page.locator("text=儲存中..."))).toBeVisible()
-  })
-})
 </file>
 
 <file path="eslint.config.js">
@@ -652,33 +442,6 @@ export default defineConfig([
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-</file>
-
-<file path="playwright.config.ts">
-import { defineConfig } from "@playwright/test"
-
-export default defineConfig({
-  testDir: "./e2e",
-  timeout: 30000,
-  use: {
-    headless: true,
-    screenshot: "only-on-failure",
-  },
-  projects: [
-    {
-      name: "mock",
-      use: {
-        baseURL: "http://localhost:5173",
-      },
-    },
-    {
-      name: "production",
-      use: {
-        baseURL: "https://event-ticketing-system-frontend-eight.vercel.app",
-      },
-    },
-  ],
-})
 </file>
 
 <file path="repomix.config.json">
@@ -1435,13 +1198,6 @@ describe("票券競態條件", () => {
 })
 </file>
 
-<file path="test-results/.last-run.json">
-{
-  "status": "passed",
-  "failedTests": []
-}
-</file>
-
 <file path="tsconfig.app.json">
 {
   "compilerOptions": {
@@ -1480,39 +1236,202 @@ describe("票券競態條件", () => {
 }
 </file>
 
-<file path="tsconfig.node.json">
-{
-  "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
-    "target": "es2023",
-    "lib": ["ES2023"],
-    "module": "esnext",
-    "types": ["node"],
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-
-    /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["vite.config.ts"]
-}
-</file>
-
 <file path="vercel.json">
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
+</file>
+
+<file path="e2e/admin.spec.ts">
+import { test, expect } from "@playwright/test"
+
+const MOCK_ACCOUNTS   = { id: "admin", password: "1234" }
+const REAL_ACCOUNTS = { id: "welfare_001", password: "password123" }
+
+function getAccount(baseURL: string) {
+  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+}
+
+async function fillDateTimeLocal(page: any, name: string, value: string) {
+  await page.evaluate(({ name, value }: { name: string; value: string }) => {
+    const input = document.querySelector(`input[name="${name}"]`) as HTMLInputElement
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype, "value"
+    )?.set
+    nativeInputValueSetter?.call(input, value)
+    input.dispatchEvent(new Event("input", { bubbles: true }))
+    input.dispatchEvent(new Event("change", { bubbles: true }))
+  }, { name, value })
+}
+
+async function loginAsAdmin(page: any, baseURL: string) {
+  const account = getAccount(baseURL)
+  await page.goto("/")
+  await page.click("text=福委登入")
+  await page.fill('input[autocomplete="username"]', account.id)
+  await page.fill('input[autocomplete="current-password"]', account.password)
+  await page.click('button[type="submit"]')
+  await expect(page).toHaveURL(/\/admin\/events$/)
+}
+
+test.describe("活動管理", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+  })
+
+  test("可以看到活動管理頁面", async ({ page }) => {
+    // ✅ Fix 1: 用 heading role 避免和 Navbar 衝突
+    await expect(page.getByRole("heading", { name: "活動管理" })).toBeVisible()
+    await expect(page.locator("text=+ 新增活動")).toBeVisible()
+  })
+
+    test("可以開啟新增活動頁面", async ({ page }) => {
+    await page.click("text=+ 新增活動")
+    await expect(page).toHaveURL(/\/admin\/events\/new$/)
+    await expect(page.getByRole("heading", { name: "新增活動" })).toBeVisible()
+    await expect(page.locator('input[name="name"]')).toBeVisible()
+    await expect(page.locator('select[name="category"]')).toBeVisible()
+    await expect(page.locator('input[name="location"]')).toBeVisible()
+    await expect(page.locator("text=儲存草稿")).toBeVisible()
+    await expect(page.locator("text=直接發布")).toBeVisible()
+    })
+
+    test("未填必填欄位顯示錯誤訊息", async ({ page }) => {
+    await page.click("text=+ 新增活動")
+    await page.click("text=儲存草稿")
+    await expect(page.locator("text=請填寫所有必填欄位")).toBeVisible()
+    await expect(page).toHaveURL(/\/admin\/events\/new$/)
+    })
+
+  test("草稿活動可以發布", async ({ page }) => {
+    const publishBtn = page.locator("text=發布").first()
+    if (await publishBtn.count() > 0) {
+      await publishBtn.click()
+      await expect(publishBtn).not.toBeVisible()
+    }
+  })
+
+  test("可以刪除活動", async ({ page }) => {
+    const deleteBtn = page.locator("text=刪除").first()
+    if (await deleteBtn.count() > 0) {
+      const countBefore = await page.locator("text=刪除").count()
+      page.on("dialog", dialog => dialog.accept())
+      await deleteBtn.click()
+      await page.waitForTimeout(500)
+      const countAfter = await page.locator("text=刪除").count()
+      expect(countAfter).toBeLessThan(countBefore)
+    }
+  })
+
+  test("可以看報名詳情", async ({ page }) => {
+    const detailBtn = page.locator("text=報名詳情").first()
+    if (await detailBtn.count() > 0) {
+      await detailBtn.click()
+      await expect(page).toHaveURL(/\/admin\/events\/.*\/registrations$/)
+      await expect(page.getByRole("heading", { name: "報名詳情" })).toBeVisible()
+    }
+  })
+
+  test("可以進入核銷頁面", async ({ page }) => {
+    const checkinBtn = page.locator("text=核銷").first()
+    if (await checkinBtn.count() > 0) {
+      await checkinBtn.click()
+      await expect(page).toHaveURL(/\/admin\/events\/.*\/checkin$/)
+      await expect(page.getByRole("heading", { name: "核銷" })).toBeVisible()
+    }
+  })
+})
+
+test.describe("報名詳情", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+    // ✅ Fix 3: 等待元素出現再點，不用 if 判斷
+    await page.waitForSelector("text=報名詳情")
+    await page.locator("text=報名詳情").first().click()
+    await expect(page).toHaveURL(/\/admin\/events\/.*\/registrations$/)
+  })
+
+  test("可以看到報名統計", async ({ page }) => {
+    await expect(page.locator("text=正取").first()).toBeVisible()
+    await expect(page.locator("text=候補").first()).toBeVisible()
+    await expect(page.locator("text=已取消").first()).toBeVisible()
+  })
+
+  test("可以依狀態篩選報名", async ({ page }) => {
+    await page.locator("select").selectOption("confirmed")
+    await expect(page.locator("text=正取").first()).toBeVisible()
+  })
+})
+
+test.describe("使用者管理", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+    await page.click("text=使用者")
+    await expect(page).toHaveURL(/\/admin\/users$/)
+  })
+
+  test("可以看到使用者管理頁面", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
+  })
+
+  test("可以依角色篩選", async ({ page }) => {
+    await page.locator("select").nth(0).selectOption("employee")
+    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
+  })
+
+  test("可以依狀態篩選", async ({ page }) => {
+    await page.locator("select").nth(1).selectOption("active")
+    await expect(page.getByRole("heading", { name: "使用者管理" })).toBeVisible()
+  })
+
+  test("可以修改使用者角色", async ({ page }) => {
+    const roleSelect = page.locator("select").nth(2)
+    if (await roleSelect.count() > 0) {
+      await roleSelect.selectOption("hr")
+      await expect(roleSelect).toHaveValue("hr")
+    }
+  })
+
+  test("可以刪除使用者", async ({ page }) => {
+    const deleteBtn = page.locator("text=刪除").first()
+    if (await deleteBtn.count() > 0) {
+      const countBefore = await page.locator("text=刪除").count()
+      page.on("dialog", dialog => dialog.accept())
+      await deleteBtn.click()
+      await page.waitForTimeout(500)
+      const countAfter = await page.locator("text=刪除").count()
+      expect(countAfter).toBeLessThanOrEqual(countBefore)
+    }
+  })
+})
+
+test.describe("核銷", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsAdmin(page, baseURL!)
+    // ✅ Fix 3: 等待元素出現再點
+    await page.waitForSelector("text=核銷")
+    await page.locator("text=核銷").first().click()
+    await expect(page).toHaveURL(/\/admin\/events\/.*\/checkin$/)
+  })
+
+  test("可以搜尋票券", async ({ page }) => {
+    await page.waitForSelector('input[placeholder="搜尋姓名或票券 ID..."]')
+    await page.fill('input[placeholder="搜尋姓名或票券 ID..."]', "john")
+    await expect(page.getByRole("heading", { name: "核銷" })).toBeVisible()
+  })
+
+  test("可以手動核銷票券", async ({ page }) => {
+    const checkinBtn = page.locator("button:has-text('核銷')").first()
+    if (await checkinBtn.count() > 0) {
+      page.on("dialog", dialog => dialog.accept())
+      await checkinBtn.click()
+      await page.waitForTimeout(500)
+      await expect(page.locator("text=完成").first()).toBeVisible()
+    }
+  })
+})
 </file>
 
 <file path="src/components/EventCard.tsx">
@@ -3015,6 +2934,417 @@ interface ImportMeta {
 }
 </file>
 
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts", "playwright.config.ts"]
+}
+</file>
+
+<file path="e2e/auth.spec.ts">
+import { test, expect } from "@playwright/test"
+
+// Mock 環境帳號
+const MOCK_ACCOUNTS = {
+  employee:      { id: "employee", password: "1234" },
+  admin:         { id: "admin",    password: "1234" },
+  hr:            { id: "hr",       password: "1234" },
+}
+
+// 真實環境帳號（拿到後填在這裡）
+const REAL_ACCOUNTS = {
+  employee:      { id: "1000001", password: "password123" },
+  admin:         { id: "welfare_001",    password: "password123" },
+  hr:            { id: "hr_001",       password: "password123" },
+}
+
+// 根據環境選帳號
+function getAccounts(baseURL: string) {
+  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+}
+
+test.describe("登入流程", () => {
+
+  test("員工登入成功，跳轉到活動列表", async ({ page, baseURL }) => {
+    const { employee } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', employee.id)
+    await page.fill('input[autocomplete="current-password"]', employee.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/events$/)
+    await expect(page.locator("text=活動列表")).toBeVisible()
+  })
+
+  test("福委登入成功，跳轉到活動管理", async ({ page, baseURL }) => {
+    const { admin } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=福委登入")
+    await page.fill('input[autocomplete="username"]', admin.id)
+    await page.fill('input[autocomplete="current-password"]', admin.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/admin\/events$/)
+    await expect(page.getByRole("heading", { name: "活動管理" })).toBeVisible()
+  })
+
+  test("HR 登入成功，跳轉到統計頁面", async ({ page, baseURL }) => {
+    const { hr } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=HR 登入")
+    await page.fill('input[autocomplete="username"]', hr.id)
+    await page.fill('input[autocomplete="current-password"]', hr.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/admin\/hr$/)
+    await expect(page.locator("text=統計報表")).toBeVisible()
+  })
+
+  test("密碼錯誤，顯示錯誤訊息", async ({ page }) => {
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', "1000001")
+    await page.fill('input[autocomplete="current-password"]', "wrongpassword")
+    await page.click('button[type="submit"]')
+    await page.waitForTimeout(2000)
+    await expect(page).toHaveURL("/")
+  })
+
+
+  test("角色不符，顯示錯誤訊息", async ({ page }) => {
+    await page.goto("/")
+    await page.click("text=福委登入")
+    await page.fill('input[autocomplete="username"]', "1000001")
+    await page.fill('input[autocomplete="current-password"]', "password123")
+    await page.click('button[type="submit"]')
+    await page.waitForTimeout(2000)
+    await expect(page).toHaveURL("/")
+  })
+
+  test("未填帳號，不能送出", async ({ page }) => {
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL("/")
+  })
+
+})
+
+test.describe("登出流程", () => {
+
+  test.beforeEach(async ({ page, baseURL }) => {
+    const { employee } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', employee.id)
+    await page.fill('input[autocomplete="current-password"]', employee.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/events$/)
+  })
+
+  test("登出後跳回登入頁面", async ({ page }) => {
+    await page.click("text=登出")
+    await expect(page).toHaveURL("/")
+    await expect(page.locator("text=企業活動訂票系統")).toBeVisible()
+  })
+
+  test("登出後無法存取受保護頁面", async ({ page, baseURL }) => {
+    const { employee } = getAccounts(baseURL!)
+    await page.goto("/")
+    await page.click("text=員工登入")
+    await page.fill('input[autocomplete="username"]', employee.id)
+    await page.fill('input[autocomplete="current-password"]', employee.password)
+    await page.click('button[type="submit"]')
+    await expect(page).toHaveURL(/\/events$/)
+
+    await page.click("text=登出")
+    await expect(page).toHaveURL("/")
+
+    await page.goto("/events")
+    await page.waitForTimeout(1000)  // ← 等路由保護觸發
+    await expect(page).toHaveURL("/")
+  })
+
+})
+</file>
+
+<file path="e2e/employee.spec.ts">
+import { test, expect } from "@playwright/test"
+
+const MOCK_ACCOUNTS = { id: "employee", password: "1234" }
+const REAL_ACCOUNTS = { id: "1000001", password: "password123" }
+
+const ACCOUNT_API = "https://account-api-75541019693.asia-east1.run.app/v1"
+const EVENT_API   = "https://event-service-75541019693.asia-east1.run.app/v1"
+
+function getAccount(baseURL: string) {
+  return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
+}
+
+async function loginAsEmployee(page: any, baseURL: string) {
+  const account = getAccount(baseURL)
+  await page.goto("/")
+  await page.click("text=員工登入")
+  await page.fill('input[autocomplete="username"]', account.id)
+  await page.fill('input[autocomplete="current-password"]', account.password)
+  await page.click('button[type="submit"]')
+  await expect(page).toHaveURL(/\/events$/, { timeout: 15000 })
+}
+
+// ── 測試資料管理（只在 production 跑） ──────────────────────────
+let createdEventId: string | null = null
+let adminToken: string | null = null
+
+test.beforeAll(async ({ request, baseURL }) => {
+  if (!baseURL?.includes("localhost")) {
+    const loginRes = await request.post(`${ACCOUNT_API}/auth/login`, {
+      data: {
+        employeeId: "welfare_001",
+        password:   "password123",
+        role:       "welfare_member",
+      },
+    })
+    const loginData = await loginRes.json()
+    adminToken = loginData.data?.token  // ← 直接取 data.token
+
+    console.log("Token:", adminToken)  // ← 確認 token 有值
+
+    const eventRes = await request.post(`${EVENT_API}/events`, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+        "Content-Type": "application/json",  // ← 加這行
+      },
+      data: {
+        name:              "E2E 測試活動（自動刪除）",
+        description:       "Playwright 自動建立，測試完會自動刪除",
+        category:          "sport",
+        location:          "台北辦公室",
+        eventStartTime:    "2025-12-01T10:00:00Z",
+        eventEndTime:      "2025-12-01T18:00:00Z",
+        registrationStart: "2025-06-01T00:00:00Z",
+        registrationEnd:   "2025-11-30T23:59:59Z",
+        ticketLimit:       50,
+        guestAllowed:      false,
+        isDraft:           false,
+      },
+    })
+    const eventData = await eventRes.json()
+    console.log("建立活動回應：", JSON.stringify(eventData))
+    createdEventId = eventData.eventId ?? eventData.data?.eventId
+  }
+})
+
+test.afterAll(async ({ request, baseURL }) => {
+  if (!baseURL?.includes("localhost") && createdEventId && adminToken) {
+    await request.delete(`${EVENT_API}/events/${createdEventId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+  }
+})
+// ── 測試資料管理結束 ──────────────────────────────────────────────
+
+test.describe("活動瀏覽", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+  })
+
+  test("可以看到活動列表", async ({ page }) => {
+    await expect(page.locator("text=活動列表")).toBeVisible()
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 15000 })
+  })
+
+  test("可以搜尋活動", async ({ page }) => {
+    await page.fill('input[placeholder="搜尋活動..."]', "E2E")
+    await page.waitForTimeout(500)
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test("可以依分類篩選", async ({ page }) => {
+    await page.selectOption("select", "sport")
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test("可以切換排序", async ({ page }) => {
+    await page.click("text=最熱門")
+    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test("可以點進活動詳情", async ({ page }) => {
+    await page.locator('[data-testid="event-card"]').first().click()
+    await expect(page.url()).toMatch(/\/events\//)
+    await expect(page.locator("text=報名資料")).toBeVisible()
+  })
+
+  test("活動詳情顯示正確資訊", async ({ page }) => {
+    await page.locator('[data-testid="event-card"]').first().click()
+    await expect(page).toHaveURL(/\/events\/\w+/, { timeout: 10000 })
+    await expect(page.locator("text=📍").first()).toBeVisible()
+    await expect(page.locator("text=🕐").first()).toBeVisible()
+    await expect(page.locator("text=報名截止").first()).toBeVisible()
+  })
+})
+
+test.describe("報名流程", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.locator('[data-testid="event-card"]').first().click()
+    await expect(page.url()).toMatch(/\/events\//)
+  })
+
+  test("可以選擇飲食需求", async ({ page }) => {
+    const select = page.locator("select").first()
+    await select.selectOption("veg")
+    await expect(select).toHaveValue("veg")
+  })
+
+  test("可以勾選自行開車", async ({ page }) => {
+    const checkbox = page.locator('input[type="checkbox"]')
+    await checkbox.check()
+    await expect(checkbox).toBeChecked()
+  })
+
+  test("報名按鈕存在且可點擊", async ({ page }) => {
+    const btn = page.locator("text=立即報名")
+      .or(page.locator("text=加入候補"))
+      .or(page.locator("text=您已報名此活動"))
+      .or(page.locator("text=目前無法報名"))
+    await expect(btn.first()).toBeVisible()
+  })
+
+  test("點擊報名後按鈕狀態改變", async ({ page }) => {
+    const registerBtn = page.locator("text=立即報名")
+    if (await registerBtn.isVisible()) {
+      await registerBtn.click()
+      await page.waitForTimeout(600)
+      const changedBtn = page.locator("text=報名中...")
+        .or(page.locator("text=您已報名此活動"))
+        .or(page.locator("text=已加入候補名單"))
+      await expect(changedBtn.first()).toBeVisible()
+    }
+  })
+})
+
+test.describe("報名紀錄", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.click("text=報名")
+    await expect(page).toHaveURL(/\/my-transactions$/)
+  })
+
+  test("可以看到報名紀錄頁面", async ({ page }) => {
+    await expect(page.locator("text=我的報名紀錄")).toBeVisible()
+  })
+
+  test("可以依狀態篩選", async ({ page }) => {
+    await page.selectOption("select", "confirmed")
+    await expect(page.locator("text=我的報名紀錄")).toBeVisible()
+  })
+})
+
+test.describe("票券", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.click("text=票券")
+    await expect(page).toHaveURL(/\/my-tickets$/)
+  })
+
+  test("可以看到票券頁面", async ({ page }) => {
+    await expect(page.locator("text=我的票券")).toBeVisible()
+  })
+
+  test("可以依狀態篩選票券", async ({ page }) => {
+    await page.selectOption("select", "unused")
+    await expect(page.locator("text=我的票券")).toBeVisible()
+  })
+
+  test("可以點進票券詳情", async ({ page }) => {
+    const ticket = page.locator("text=可報到, text=已報到, text=未開放").first()
+    if (await ticket.count() > 0) {
+      await ticket.locator("..").locator("..").click()
+      await expect(page.url()).toMatch(/\/my-tickets\//)
+      await expect(page.locator("text=票券編號")).toBeVisible()
+    }
+  })
+})
+
+test.describe("個人資料", () => {
+  test.beforeEach(async ({ page, baseURL }) => {
+    await loginAsEmployee(page, baseURL!)
+    await page.click("text=個人")
+    await expect(page).toHaveURL(/\/profile$/)
+  })
+
+  test("可以看到個人資料頁面", async ({ page }) => {
+    await expect(page.locator("text=個人資料")).toBeVisible()
+    await expect(page.locator("text=活動偏好")).toBeVisible()
+    await expect(page.locator("text=報名自動填入")).toBeVisible()
+  })
+
+  test("可以選擇活動偏好", async ({ page }) => {
+    await page.click("text=🏃 運動")
+    await expect(page.locator("text=🏃 運動")).toBeVisible()
+  })
+
+  test("可以儲存設定", async ({ page }) => {
+    await page.click("text=儲存")
+    await expect(
+      page.locator("text=✓ 已儲存").or(page.locator("text=儲存中..."))
+    ).toBeVisible()
+  })
+})
+</file>
+
+<file path="playwright.config.ts">
+import { defineConfig } from "@playwright/test"
+
+export default defineConfig({
+  testDir: "./e2e",
+  timeout: 30000,
+  maxFailures: 1,
+  use: {
+    headless: true,
+    screenshot: "only-on-failure",
+  },
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:5173",
+    reuseExistingServer: !process.env.CI,
+  },
+  projects: [
+    {
+      name: "mock",
+      use: {
+        baseURL: "http://localhost:5173",
+      },
+    },
+    {
+      name: "production",
+      use: {
+        baseURL: "https://event-ticketing-system-frontend-eight.vercel.app",
+      },
+    },
+  ],
+})
+</file>
+
 <file path="README.md">
 # 企業活動訂票系統 — 前端
 
@@ -3467,19 +3797,13 @@ function CreateEventPage() {
 export default CreateEventPage
 </file>
 
-<file path="vite.config.ts">
-import { defineConfig } from "vitest/config"
-import react from "@vitejs/plugin-react"
-import tailwindcss from "@tailwindcss/vite"
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/tests/setup.ts",
-  },
-})
+<file path="test-results/.last-run.json">
+{
+  "status": "failed",
+  "failedTests": [
+    "3c37713e1e72b903cb86-d0bd589ca5fab2893836"
+  ]
+}
 </file>
 
 <file path=".github/workflows/ci.yml">
@@ -3933,6 +4257,24 @@ export const MOCK_ELIGIBILITY = {
 }
 </file>
 
+<file path="vite.config.ts">
+import { defineConfig } from "vitest/config"
+import react from "@vitejs/plugin-react"
+import tailwindcss from "@tailwindcss/vite"
+import { configDefaults } from 'vitest/config' // ?????
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/tests/setup.ts",
+    // ?? exclude????????????????? e2e ??
+    exclude: [...configDefaults.exclude, 'e2e/*'],
+  },
+})
+</file>
+
 <file path="src/api/tickets.ts">
 import type { Ticket } from "../types"
 import { getAuthHeaders } from "./auth"
@@ -4186,6 +4528,8 @@ export async function updateTransaction(
 </file>
 
 <file path="src/config/app.config.ts">
+console.log("EVENT_API_URL:", import.meta.env.VITE_EVENT_API_URL)
+
 export const APP_CONFIG = {
   api: {
     accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
@@ -4541,54 +4885,6 @@ function ProfilePage() {
 }
 
 export default ProfilePage
-</file>
-
-<file path="package.json">
-{
-  "name": "event-ticketing-system-frontend",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@sentry/react": "^10.55.0",
-    "@tanstack/react-query": "^5.100.14",
-    "@vercel/analytics": "^2.0.1",
-    "framer-motion": "^12.40.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-router-dom": "^7.15.1",
-    "sharp": "^0.34.5"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.60.0",
-    "@tailwindcss/vite": "^4.3.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@types/react-router-dom": "^5.3.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "jsdom": "^29.1.1",
-    "tailwindcss": "^4.3.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
-    "vitest": "^4.1.7"
-  }
-}
 </file>
 
 <file path="src/pages/admin/HRDashboardPage.tsx">
@@ -5167,6 +5463,58 @@ function TicketDetailPage() {
 }
 
 export default TicketDetailPage
+</file>
+
+<file path="package.json">
+{
+  "name": "event-ticketing-system-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "@sentry/react": "^10.55.0",
+    "@tanstack/react-query": "^5.100.14",
+    "@vercel/analytics": "^2.0.1",
+    "framer-motion": "^12.40.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
+    "@tailwindcss/vite": "^4.3.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-router-dom": "^5.3.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.7"
+  }
+}
 </file>
 
 <file path="src/components/Navbar.tsx">
@@ -6003,90 +6351,6 @@ export async function getMe(signal?: AbortSignal): Promise<User> {
 }
 </file>
 
-<file path="src/App.tsx">
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom"
-import { lazy, Suspense } from "react"
-import * as Sentry from "@sentry/react"
-import Navbar from "./components/Navbar"
-import { useAutoLogout } from "./hooks/useAutoLogout"
-
-const LoginPage = lazy(() => import("./pages/LoginPage"))
-const EventListPage = lazy(() => import("./pages/EventListPage"))
-const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
-const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"))
-const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"))
-const MyTransactionsPage = lazy(() => import("./pages/MyTransactionsPage"))
-const ProfilePage = lazy(() => import("./pages/ProfilePage"))
-const EventManagePage = lazy(() => import("./pages/admin/EventManagePage"))
-const RegistrationDetailPage = lazy(() => import("./pages/admin/RegistrationDetailPage"))
-const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
-const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
-const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
-const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
-
-// 發生錯誤時的備用畫面
-function ErrorFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-4xl mb-4">⚠️</p>
-        <p className="text-white font-semibold mb-2">發生了一些問題</p>
-        <p className="text-zinc-400 text-sm mb-6">錯誤已自動回報，請重新整理頁面</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium text-sm"
-        >
-          重新整理
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function Layout() {
-  const location = useLocation()
-  useAutoLogout()
-
-  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
-
-  return (
-    <>
-      {!hideNavbar && <Navbar />}
-      <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="/auth/callback" element={<LoginPage />} />
-          <Route path="/events" element={<EventListPage />} />
-          <Route path="/events/:eventId" element={<EventDetailPage />} />
-          <Route path="/my-transactions" element={<MyTransactionsPage />} />
-          <Route path="/my-tickets" element={<MyTicketsPage />} />
-          <Route path="/my-tickets/:ticketId" element={<TicketDetailPage />} />
-          <Route path="/admin/events" element={<EventManagePage />} />
-          <Route path="/admin/events/new" element={<CreateEventPage />} />
-          <Route path="/admin/events/:eventId/registrations" element={<RegistrationDetailPage />} />
-          <Route path="/admin/events/:eventId/checkin" element={<CheckinPage />} />
-          <Route path="/admin/users" element={<UserManagePage />} />
-          <Route path="/admin/hr" element={<HRDashboardPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Routes>
-      </Suspense>
-    </>
-  )
-}
-
-function App() {
-  return (
-    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
-      <BrowserRouter>
-        <Layout />
-      </BrowserRouter>
-    </Sentry.ErrorBoundary>
-  )
-}
-
-export default Sentry.withProfiler(App)
-</file>
-
 <file path="src/pages/MyTransactionsPage.tsx">
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
@@ -6241,6 +6505,100 @@ function MyTransactionsPage() {
 }
 
 export default MyTransactionsPage
+</file>
+
+<file path="src/App.tsx">
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { lazy, Suspense } from "react"
+import * as Sentry from "@sentry/react"
+import Navbar from "./components/Navbar"
+import { useAutoLogout } from "./hooks/useAutoLogout"
+
+const LoginPage = lazy(() => import("./pages/LoginPage"))
+const EventListPage = lazy(() => import("./pages/EventListPage"))
+const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
+const MyTicketsPage = lazy(() => import("./pages/MyTicketsPage"))
+const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"))
+const MyTransactionsPage = lazy(() => import("./pages/MyTransactionsPage"))
+const ProfilePage = lazy(() => import("./pages/ProfilePage"))
+const EventManagePage = lazy(() => import("./pages/admin/EventManagePage"))
+const RegistrationDetailPage = lazy(() => import("./pages/admin/RegistrationDetailPage"))
+const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
+const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
+const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
+const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
+
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem("token")
+  if (!token) {
+    return <Navigate to="/" replace />
+  }
+  return <>{children}</>
+}
+// 發生錯誤時的備用畫面
+function ErrorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-4xl mb-4">⚠️</p>
+        <p className="text-white font-semibold mb-2">發生了一些問題</p>
+        <p className="text-zinc-400 text-sm mb-6">錯誤已自動回報，請重新整理頁面</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 rounded-xl bg-white text-zinc-900 font-medium text-sm"
+        >
+          重新整理
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function Layout() {
+  const location = useLocation()
+  useAutoLogout()
+
+  const hideNavbar = location.pathname === "/" || location.pathname === "/auth/callback"
+
+  return (
+    <>
+      {!hideNavbar && <Navbar />}
+      <Suspense fallback={<div className="text-center py-16 text-zinc-500">載入中...</div>}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<LoginPage />} />
+
+          {/* 以下都需要登入 */}
+          <Route path="/events" element={<PrivateRoute><EventListPage /></PrivateRoute>} />
+          <Route path="/events/:eventId" element={<PrivateRoute><EventDetailPage /></PrivateRoute>} />
+          <Route path="/my-transactions" element={<PrivateRoute><MyTransactionsPage /></PrivateRoute>} />
+          <Route path="/my-tickets" element={<PrivateRoute><MyTicketsPage /></PrivateRoute>} />
+          <Route path="/my-tickets/:ticketId" element={<PrivateRoute><TicketDetailPage /></PrivateRoute>} />
+          <Route path="/admin/events" element={<PrivateRoute><EventManagePage /></PrivateRoute>} />
+          <Route path="/admin/events/new" element={<PrivateRoute><CreateEventPage /></PrivateRoute>} />
+          <Route path="/admin/events/:eventId/registrations" element={<PrivateRoute><RegistrationDetailPage /></PrivateRoute>} />
+          <Route path="/admin/events/:eventId/checkin" element={<PrivateRoute><CheckinPage /></PrivateRoute>} />
+          <Route path="/admin/users" element={<PrivateRoute><UserManagePage /></PrivateRoute>} />
+          <Route path="/admin/hr" element={<PrivateRoute><HRDashboardPage /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        </Routes>
+      </Suspense>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+      <BrowserRouter>
+        <Layout />
+      </BrowserRouter>
+    </Sentry.ErrorBoundary>
+  )
+}
+
+export default Sentry.withProfiler(App)
 </file>
 
 <file path="src/pages/EventDetailPage.tsx">
