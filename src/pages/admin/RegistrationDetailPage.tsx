@@ -27,7 +27,7 @@ function RegistrationDetailPage() {
 
     getEventRegistrations(eventId, undefined, controller.signal)
       .then(res => {
-        setData(res)
+        setData(res.data)
         setLoading(false)
       })
       .catch(err => {
