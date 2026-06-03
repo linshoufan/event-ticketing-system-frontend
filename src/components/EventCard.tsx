@@ -54,7 +54,15 @@ function EventCard({ event, onClick }: Props) {
             </p>
             <p className="text-zinc-500 text-sm mt-1 flex items-center gap-1">
               <span>🕐</span>
-              {new Date(event.eventStartTime).toLocaleString("zh-TW")}
+              活動開始：{new Date(event.eventStartTime).toLocaleString("zh-TW")}
+            </p>
+            <p className="text-zinc-500 text-sm mt-0.5 flex items-center gap-1">
+              <span>🕕</span>
+              活動結束：{new Date(event.eventEndTime).toLocaleString("zh-TW")}
+            </p>
+            <p className="text-zinc-500 text-sm mt-0.5 flex items-center gap-1">
+              <span>📅</span>
+              報名截止：{new Date(event.registrationEnd).toLocaleString("zh-TW")}
             </p>
           </div>
         </div>
