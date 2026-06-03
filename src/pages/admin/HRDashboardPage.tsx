@@ -58,12 +58,12 @@ function HRDashboardPage() {
             eventId: event.eventId,
             eventName: event.name,
             ticketLimit: event.ticketLimit,
-            totalConfirmed: regData.summary.totalConfirmed,
-            totalWaitlist: regData.summary.totalWaitlist,
-            totalCancelled: regData.summary.totalCancelled,
-            totalCheckedIn: ticketData.data.summary.used,   // tickets API 的 used 就是出席數
+            totalConfirmed: regData.data.summary.totalConfirmed,   // ← 加 .data
+            totalWaitlist:  regData.data.summary.totalWaitlist,    // ← 加 .data
+            totalCancelled: regData.data.summary.totalCancelled,   // ← 加 .data
+            totalCheckedIn: ticketData.data.summary.used,          // ← 這個本來就對
           } satisfies EventStat
-        })
+          })
 
         // 等所有活動的資料都回來
         const allStats = await Promise.all(statsPromises)
