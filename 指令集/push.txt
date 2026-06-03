@@ -1,3 +1,4 @@
 git add .
-git commit -m "新增不能報名原因"
+git commit -m "修正核銷功能"
 git push origin main
+

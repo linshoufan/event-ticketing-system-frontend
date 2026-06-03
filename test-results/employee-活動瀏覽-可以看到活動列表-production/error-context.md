@@ -105,7 +105,7 @@ SyntaxError: Unexpected token '<', "
   83  |   })
   84  | 
   85  |   test("可以搜尋活動", async ({ page }) => {
-  86  |     await page.fill('input[placeholder="搜尋活動..."]', "E2E")
+  86  |     await page.fill('input[placeholder="搜尋活動..."]', "烤肉")  // ← 改這裡
   87  |     await page.waitForTimeout(500)
   88  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
   89  |   })

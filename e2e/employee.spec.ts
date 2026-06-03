@@ -83,7 +83,7 @@ test.describe("活動瀏覽", () => {
   })
 
   test("可以搜尋活動", async ({ page }) => {
-    await page.fill('input[placeholder="搜尋活動..."]', "E2E")
+    await page.fill('input[placeholder="搜尋活動..."]', "烤肉")  // ← 改這裡
     await page.waitForTimeout(500)
     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
   })

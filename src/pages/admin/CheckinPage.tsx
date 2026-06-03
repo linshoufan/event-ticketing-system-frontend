@@ -43,7 +43,7 @@ function CheckinPage() {
   }, [eventId])
 
   const filtered = tickets.filter(t =>
-    t.username.toLowerCase().includes(search.toLowerCase()) ||
+    (t.username ?? "").toLowerCase().includes(search.toLowerCase()) ||
     t.ticketId.toLowerCase().includes(search.toLowerCase())
   )
 
