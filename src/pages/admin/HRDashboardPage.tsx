@@ -52,7 +52,8 @@ function HRDashboardPage() {
             getEventRegistrations(event.eventId, undefined, controller.signal),
             getEventTickets(event.eventId, undefined, controller.signal),
           ])
-
+          console.log("regData:", JSON.stringify(regData))      // ← 加這行
+          console.log("ticketData:", JSON.stringify(ticketData)) // ← 加這行
           return {
             eventId: event.eventId,
             eventName: event.name,
