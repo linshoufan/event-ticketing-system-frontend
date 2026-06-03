@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
-import { getEventTickets } from "../../api/tickets"
+import { getEventTickets , checkin} from "../../api/tickets"
 import PageTransition from "../../components/PageTransition"
 
 interface TicketRecord {
@@ -47,12 +47,25 @@ function CheckinPage() {
     t.ticketId.toLowerCase().includes(search.toLowerCase())
   )
 
-  function handleCheckin(ticketId: string) {
+  async function handleCheckin(ticketId: string) {
     if (!confirm("確定要核銷這張票券嗎？")) return
-    setTickets(prev =>
-      prev.map(t => t.ticketId === ticketId ? { ...t, status: "used" } : t)
-    )
-    setSummary(prev => ({ ...prev, used: prev.used + 1, unused: prev.unused - 1 }))
+    try {
+      // 福委手動核銷，用活動座標（或 0,0 讓後端判斷）
+      await checkin(ticketId, { latitude: 0, longitude: 0 })
+      setTickets(prev =>
+        prev.map(t => t.ticketId === ticketId ? { ...t, status: "used" } : t)
+      )
+      setSummary(prev => ({ ...prev, used: prev.used + 1, unused: prev.unused - 1 }))
+    } catch (err: any) {
+      const code = err?.code
+      if (code === "OUT_OF_RANGE") {
+        alert("位置不在範圍內，無法核銷")
+      } else if (code === "TICKET_INVALID") {
+        alert("票券已使用或無效")
+      } else {
+        alert("核銷失敗，請稍後再試")
+      }
+    }
   }
 
   return (

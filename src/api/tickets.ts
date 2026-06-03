@@ -1,6 +1,7 @@
 import type { Ticket } from "../types"
 import { getAuthHeaders } from "./auth"
 import { APP_CONFIG } from "../config/app.config"
+import { checkin } from "../../api/tickets"
 
 const BASE_URL = APP_CONFIG.api.ticketUrl
 const { useMock, mockDelayMs, mockActionDelayMs } = APP_CONFIG.development

@@ -1,4 +1,4 @@
 git add .
-git commit -m "修正核銷功能"
+git commit -m "修正核銷功能AGAIN"
 git push origin main
 
