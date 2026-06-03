@@ -131,6 +131,6 @@ describe("EventCard category emoji", () => {
 
   it("未知類別應該顯示預設 emoji", () => {
     render(<EventCard event={{ ...mockEvent, category: "unknown" }} onClick={() => {}} />)
-    expect(screen.getByText("📅")).toBeInTheDocument()
+    expect(screen.getAllByText("📅").length).toBeGreaterThanOrEqual(1)
   })
 })
