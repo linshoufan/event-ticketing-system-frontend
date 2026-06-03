@@ -40,8 +40,13 @@ function EventManagePage() {
     try {
       await deleteEvent(eventId)
       setEvents(prev => prev.filter(e => e.eventId !== eventId))
-    } catch {
-      alert("刪除失敗，請稍後再試")
+    } catch (err: any) {
+      const code = err?.code ?? err?.error?.code
+      if (code === "EVENT_NOT_DELETABLE") {
+        alert("此活動已開始報名，無法刪除")
+      } else {
+        alert("刪除失敗，請稍後再試")
+      }
     }
   }
 

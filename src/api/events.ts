@@ -105,5 +105,10 @@ export async function deleteEvent(eventId: string) {
     headers: getAuthHeaders(),
   })
   const json = await res.json()
+
+  if (!res.ok) {
+    throw json.error  // ? ????? catch ?????
+  }
+
   return json.data
 }

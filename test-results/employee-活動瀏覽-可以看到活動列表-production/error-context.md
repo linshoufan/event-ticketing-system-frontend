@@ -12,43 +12,8 @@
 # Error details
 
 ```
-Error: expect(locator).toBeVisible() failed
-
-Locator: locator('[data-testid="event-card"]').first()
-Expected: visible
-Timeout: 15000ms
-Error: element(s) not found
-
-Call log:
-  - Expect "toBeVisible" with timeout 15000ms
-  - waiting for locator('[data-testid="event-card"]').first()
-
-```
-
-```yaml
-- navigation:
-  - text: 企業活動訂票系統 活動 報名 票券 個人
-  - button "登出"
-- heading "活動列表" [level=1]
-- textbox "搜尋活動..."
-- combobox:
-  - option "所有類別" [selected]
-  - option "運動"
-  - option "美食"
-  - option "旅遊"
-  - option "文藝"
-  - option "親子"
-  - option "競賽"
-  - option "音樂"
-- button "為你推薦"
-- button "報名中"
-- button "候補中"
-- button "報名截止"
-- button "最熱門"
-- button "名額最少"
-- button "名額最多"
-- paragraph: 🔍
-- paragraph: 沒有符合的活動
+SyntaxError: Unexpected token '<', "
+<html><hea"... is not valid JSON
 ```
 
 # Test source
@@ -113,7 +78,8 @@ Call log:
   57  |         isDraft:           false,
   58  |       },
   59  |     })
-  60  |     const eventData = await eventRes.json()
+> 60  |     const eventData = await eventRes.json()
+      |                       ^ SyntaxError: Unexpected token '<', "
   61  |     console.log("建立活動回應：", JSON.stringify(eventData))
   62  |     createdEventId = eventData.eventId ?? eventData.data?.eventId
   63  |   }
@@ -135,8 +101,7 @@ Call log:
   79  | 
   80  |   test("可以看到活動列表", async ({ page }) => {
   81  |     await expect(page.locator("text=活動列表")).toBeVisible()
-> 82  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 15000 })
-      |                                                                      ^ Error: expect(locator).toBeVisible() failed
+  82  |     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 15000 })
   83  |   })
   84  | 
   85  |   test("可以搜尋活動", async ({ page }) => {
@@ -215,26 +180,4 @@ Call log:
   158 |     await loginAsEmployee(page, baseURL!)
   159 |     await page.click("text=報名")
   160 |     await expect(page).toHaveURL(/\/my-transactions$/)
-  161 |   })
-  162 | 
-  163 |   test("可以看到報名紀錄頁面", async ({ page }) => {
-  164 |     await expect(page.locator("text=我的報名紀錄")).toBeVisible()
-  165 |   })
-  166 | 
-  167 |   test("可以依狀態篩選", async ({ page }) => {
-  168 |     await page.selectOption("select", "confirmed")
-  169 |     await expect(page.locator("text=我的報名紀錄")).toBeVisible()
-  170 |   })
-  171 | })
-  172 | 
-  173 | test.describe("票券", () => {
-  174 |   test.beforeEach(async ({ page, baseURL }) => {
-  175 |     await loginAsEmployee(page, baseURL!)
-  176 |     await page.click("text=票券")
-  177 |     await expect(page).toHaveURL(/\/my-tickets$/)
-  178 |   })
-  179 | 
-  180 |   test("可以看到票券頁面", async ({ page }) => {
-  181 |     await expect(page.locator("text=我的票券")).toBeVisible()
-  182 |   })
 ```
