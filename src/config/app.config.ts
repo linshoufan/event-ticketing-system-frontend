@@ -1,3 +1,5 @@
+console.log("EVENT_API_URL:", import.meta.env.VITE_EVENT_API_URL)
+
 export const APP_CONFIG = {
   api: {
     accountUrl: import.meta.env.VITE_ACCOUNT_API_URL ?? "http://localhost:8000/v1",
