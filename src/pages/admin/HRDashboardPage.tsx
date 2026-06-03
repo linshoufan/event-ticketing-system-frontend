@@ -71,6 +71,7 @@ function HRDashboardPage() {
       })
       .catch((err) => {
         if (err.name === "AbortError") return
+        console.log("HR Dashboard 錯誤：", err)  // ← 加這行
         setError(true)
         setLoading(false)
       })
