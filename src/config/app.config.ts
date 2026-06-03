@@ -16,7 +16,7 @@ export const APP_CONFIG = {
   // src/config/app.config.ts
   development: {
     mockDelayMs: 800,
-    mockActionDelayMs: 3000,  // 報名中維持 3 秒
+    mockActionDelayMs: 500,  // 報名中維持 3 秒
     useMock: import.meta.env.VITE_USE_MOCK === "true",
   }
 } as const

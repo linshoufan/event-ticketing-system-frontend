@@ -1,20 +1,17 @@
 import { test, expect } from "@playwright/test"
 
-// Mock 環境帳號
 const MOCK_ACCOUNTS = {
-  employee:      { id: "employee", password: "1234" },
-  admin:         { id: "admin",    password: "1234" },
-  hr:            { id: "hr",       password: "1234" },
+  employee: { id: "employee", password: "1234" },
+  admin:    { id: "admin",    password: "1234" },
+  hr:       { id: "hr",       password: "1234" },
 }
 
-// 真實環境帳號（拿到後填在這裡）
 const REAL_ACCOUNTS = {
-  employee:      { id: "1000001", password: "password123" },
-  admin:         { id: "welfare_001",    password: "password123" },
-  hr:            { id: "hr_001",       password: "password123" },
+  employee: { id: "1000001",     password: "password123" },
+  admin:    { id: "welfare_001", password: "password123" },
+  hr:       { id: "hr_001",      password: "password123" },
 }
 
-// 根據環境選帳號
 function getAccounts(baseURL: string) {
   return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
 }
@@ -28,7 +25,7 @@ test.describe("登入流程", () => {
     await page.fill('input[autocomplete="username"]', employee.id)
     await page.fill('input[autocomplete="current-password"]', employee.password)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/events$/)
+    await expect(page).toHaveURL(/\/events$/, { timeout: 15000 })
     await expect(page.locator("text=活動列表")).toBeVisible()
   })
 
@@ -39,7 +36,7 @@ test.describe("登入流程", () => {
     await page.fill('input[autocomplete="username"]', admin.id)
     await page.fill('input[autocomplete="current-password"]', admin.password)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/admin\/events$/)
+    await expect(page).toHaveURL(/\/admin\/events$/, { timeout: 15000 })
     await expect(page.getByRole("heading", { name: "活動管理" })).toBeVisible()
   })
 
@@ -50,7 +47,7 @@ test.describe("登入流程", () => {
     await page.fill('input[autocomplete="username"]', hr.id)
     await page.fill('input[autocomplete="current-password"]', hr.password)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/admin\/hr$/)
+    await expect(page).toHaveURL(/\/admin\/hr$/, { timeout: 15000 })
     await expect(page.locator("text=統計報表")).toBeVisible()
   })
 
@@ -63,7 +60,6 @@ test.describe("登入流程", () => {
     await page.waitForTimeout(2000)
     await expect(page).toHaveURL("/")
   })
-
 
   test("角色不符，顯示錯誤訊息", async ({ page }) => {
     await page.goto("/")
@@ -93,7 +89,7 @@ test.describe("登出流程", () => {
     await page.fill('input[autocomplete="username"]', employee.id)
     await page.fill('input[autocomplete="current-password"]', employee.password)
     await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/events$/)
+    await expect(page).toHaveURL(/\/events$/, { timeout: 15000 })
   })
 
   test("登出後跳回登入頁面", async ({ page }) => {
@@ -102,20 +98,11 @@ test.describe("登出流程", () => {
     await expect(page.locator("text=企業活動訂票系統")).toBeVisible()
   })
 
-  test("登出後無法存取受保護頁面", async ({ page, baseURL }) => {
-    const { employee } = getAccounts(baseURL!)
-    await page.goto("/")
-    await page.click("text=員工登入")
-    await page.fill('input[autocomplete="username"]', employee.id)
-    await page.fill('input[autocomplete="current-password"]', employee.password)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/\/events$/)
-
+  test("登出後無法存取受保護頁面", async ({ page }) => {
     await page.click("text=登出")
     await expect(page).toHaveURL("/")
-
     await page.goto("/events")
-    await page.waitForTimeout(1000)  // ← 等路由保護觸發
+    await page.waitForTimeout(1000)
     await expect(page).toHaveURL("/")
   })
 

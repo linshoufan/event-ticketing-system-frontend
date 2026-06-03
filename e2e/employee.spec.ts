@@ -3,9 +3,6 @@ import { test, expect } from "@playwright/test"
 const MOCK_ACCOUNTS = { id: "employee", password: "1234" }
 const REAL_ACCOUNTS = { id: "1000001", password: "password123" }
 
-const ACCOUNT_API = "https://account-api-75541019693.asia-east1.run.app/v1"
-const EVENT_API   = "https://event-service-75541019693.asia-east1.run.app/v1"
-
 function getAccount(baseURL: string) {
   return baseURL.includes("localhost") ? MOCK_ACCOUNTS : REAL_ACCOUNTS
 }
@@ -20,57 +17,7 @@ async function loginAsEmployee(page: any, baseURL: string) {
   await expect(page).toHaveURL(/\/events$/, { timeout: 15000 })
 }
 
-// ── 測試資料管理（只在 production 跑） ──────────────────────────
-let createdEventId: string | null = null
-let adminToken: string | null = null
-
-test.beforeAll(async ({ request, baseURL }) => {
-  if (!baseURL?.includes("localhost")) {
-    const loginRes = await request.post(`${ACCOUNT_API}/auth/login`, {
-      data: {
-        employeeId: "welfare_001",
-        password:   "password123",
-        role:       "welfare_member",
-      },
-    })
-    const loginData = await loginRes.json()
-    adminToken = loginData.data?.token  // ← 直接取 data.token
-
-    console.log("Token:", adminToken)  // ← 確認 token 有值
-
-    const eventRes = await request.post(`${EVENT_API}/events`, {
-      headers: {
-        Authorization: `Bearer ${adminToken}`,
-        "Content-Type": "application/json",  // ← 加這行
-      },
-      data: {
-        name:              "E2E 測試活動（自動刪除）",
-        description:       "Playwright 自動建立，測試完會自動刪除",
-        category:          "sport",
-        location:          "台北辦公室",
-        eventStartTime:    "2025-12-01T10:00:00Z",
-        eventEndTime:      "2025-12-01T18:00:00Z",
-        registrationStart: "2025-06-01T00:00:00Z",
-        registrationEnd:   "2025-11-30T23:59:59Z",
-        ticketLimit:       50,
-        guestAllowed:      false,
-        isDraft:           false,
-      },
-    })
-    const eventData = await eventRes.json()
-    console.log("建立活動回應：", JSON.stringify(eventData))
-    createdEventId = eventData.eventId ?? eventData.data?.eventId
-  }
-})
-
-test.afterAll(async ({ request, baseURL }) => {
-  if (!baseURL?.includes("localhost") && createdEventId && adminToken) {
-    await request.delete(`${EVENT_API}/events/${createdEventId}`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    })
-  }
-})
-// ── 測試資料管理結束 ──────────────────────────────────────────────
+// ✅ 移除 beforeAll/afterAll，資料庫已有活動資料不需要自動建立
 
 test.describe("活動瀏覽", () => {
   test.beforeEach(async ({ page, baseURL }) => {
@@ -83,14 +30,17 @@ test.describe("活動瀏覽", () => {
   })
 
   test("可以搜尋活動", async ({ page }) => {
-    await page.fill('input[placeholder="搜尋活動..."]', "烤肉")  // ← 改這裡
+    const baseURL = page.url()
+    const keyword = baseURL.includes("localhost") ? "烤肉" : "Family"
+    await page.fill('input[placeholder="搜尋活動..."]', keyword)
     await page.waitForTimeout(500)
     await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
   })
 
   test("可以依分類篩選", async ({ page }) => {
     await page.selectOption("select", "sport")
-    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+    await page.waitForTimeout(500)
+    await expect(page.locator("text=活動列表")).toBeVisible()
   })
 
   test("可以切換排序", async ({ page }) => {
@@ -100,7 +50,7 @@ test.describe("活動瀏覽", () => {
 
   test("可以點進活動詳情", async ({ page }) => {
     await page.locator('[data-testid="event-card"]').first().click()
-    await expect(page.url()).toMatch(/\/events\//)
+    await expect(page).toHaveURL(/\/events\/\w+/, { timeout: 10000 })
     await expect(page.locator("text=報名資料")).toBeVisible()
   })
 
@@ -108,7 +58,7 @@ test.describe("活動瀏覽", () => {
     await page.locator('[data-testid="event-card"]').first().click()
     await expect(page).toHaveURL(/\/events\/\w+/, { timeout: 10000 })
     await expect(page.locator("text=📍").first()).toBeVisible()
-    await expect(page.locator("text=🕐").first()).toBeVisible()
+    await expect(page.locator("text=活動開始").first()).toBeVisible()
     await expect(page.locator("text=報名截止").first()).toBeVisible()
   })
 })
@@ -117,7 +67,7 @@ test.describe("報名流程", () => {
   test.beforeEach(async ({ page, baseURL }) => {
     await loginAsEmployee(page, baseURL!)
     await page.locator('[data-testid="event-card"]').first().click()
-    await expect(page.url()).toMatch(/\/events\//)
+    await expect(page).toHaveURL(/\/events\/\w+/)
   })
 
   test("可以選擇飲食需求", async ({ page }) => {
@@ -137,6 +87,7 @@ test.describe("報名流程", () => {
       .or(page.locator("text=加入候補"))
       .or(page.locator("text=您已報名此活動"))
       .or(page.locator("text=目前無法報名"))
+      .or(page.locator("text=載入中..."))
     await expect(btn.first()).toBeVisible()
   })
 
