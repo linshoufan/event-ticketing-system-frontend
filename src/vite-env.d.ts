@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   readonly VITE_ACCOUNT_API_URL: string
   readonly VITE_EVENT_API_URL: string
   readonly VITE_TX_API_URL: string
+  readonly VITE_TICKET_API_URL: string
   readonly VITE_USE_MOCK: string
 }
 

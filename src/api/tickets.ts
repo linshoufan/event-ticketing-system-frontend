@@ -2,7 +2,7 @@ import type { Ticket } from "../types"
 import { getAuthHeaders } from "./auth"
 import { APP_CONFIG } from "../config/app.config"
 
-const BASE_URL = APP_CONFIG.api.txUrl
+const BASE_URL = APP_CONFIG.api.ticketUrl
 const { useMock, mockDelayMs, mockActionDelayMs } = APP_CONFIG.development
 
 function delay<T>(data: T, ms: number = mockDelayMs, signal?: AbortSignal): Promise<T> {
