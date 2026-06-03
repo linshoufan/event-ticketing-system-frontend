@@ -28,7 +28,7 @@ function EventDetailPage() {
   const [guestCount, setGuestCount] = useState(0)
   const [registering, setRegistering] = useState(false)
   const [waitlisted, setWaitlisted] = useState(false)
-  
+
   // 活動資料：5 分鐘內用快取
   const { data: event, isLoading: eventLoading } = useQuery<Event>({
     queryKey: ["event", eventId],
@@ -45,7 +45,6 @@ function EventDetailPage() {
     staleTime: 0,
   })
 
-  // onSuccess 在 v5 移除，改用 useEffect
   useEffect(() => {
     if (eligibility?.reason === "ALREADY_REGISTERED") {
       setAlreadyRegistered(true)
@@ -65,12 +64,9 @@ function EventDetailPage() {
       })
       showToast("報名成功！", "success")
       setAlreadyRegistered(true)
-
-      // 報名成功後讓相關快取失效，確保資料最新
       queryClient.invalidateQueries({ queryKey: ["event", eventId] })
       queryClient.invalidateQueries({ queryKey: ["eligibility", eventId] })
       queryClient.invalidateQueries({ queryKey: ["events"] })
-
     } catch (err: any) {
       const code = err?.code
       if (code === "ALREADY_REGISTERED") {
@@ -78,7 +74,7 @@ function EventDetailPage() {
         setAlreadyRegistered(true)
       } else if (code === "NO_TICKETS") {
         showToast("名額剛好額滿，已為您加入候補", "info")
-        setWaitlisted(true) //
+        setWaitlisted(true)
         refetchEligibility()
       } else if (code === "ACCOUNT_LOCKED") {
         showToast("帳號已被鎖定，無法報名", "error")
@@ -119,7 +115,6 @@ function EventDetailPage() {
       )
     }
 
-    // ← 加這段：不符合資格的原因
     if (!eligibility.eligible) {
       const reason = eligibility.reason
       if (reason === "LOCKED") {
@@ -207,22 +202,30 @@ function EventDetailPage() {
             </div>
             <div className="flex items-center gap-2 text-zinc-400">
               <span>🕐</span>
-              <span>{new Date(event.eventStartTime).toLocaleString("zh-TW")}</span>
+              <span>活動開始：{new Date(event.eventStartTime).toLocaleString("zh-TW")}</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-400">
+              <span>🕕</span>
+              <span>活動結束：{new Date(event.eventEndTime).toLocaleString("zh-TW")}</span>
+            </div>
+            <div className="flex items-center gap-2 text-zinc-400">
+              <span>📋</span>
+              <span>報名開始：{new Date(event.registrationStart).toLocaleString("zh-TW")}</span>
             </div>
             <div className="flex items-center gap-2 text-zinc-400">
               <span>📅</span>
               <span>報名截止：{new Date(event.registrationEnd).toLocaleString("zh-TW")}</span>
             </div>
-            {event.ticketLimit && (
-              <div className="flex items-center gap-2 text-zinc-400">
-                <span>🎫</span>
-                <span>剩餘名額：<span className="text-white font-medium">{event.remainingTickets}</span> / {event.ticketLimit}</span>
-              </div>
-            )}
             {event.cancellationDeadline && (
               <div className="flex items-center gap-2 text-zinc-400">
                 <span>⚠️</span>
                 <span>取消截止：{new Date(event.cancellationDeadline).toLocaleString("zh-TW")}</span>
+              </div>
+            )}
+            {event.ticketLimit && (
+              <div className="flex items-center gap-2 text-zinc-400">
+                <span>🎫</span>
+                <span>剩餘名額：<span className="text-white font-medium">{event.remainingTickets}</span> / {event.ticketLimit}</span>
               </div>
             )}
           </div>
