@@ -97,10 +97,7 @@ function EventDetailPage() {
 
     if (!eligibility) {
       return (
-        <button
-          disabled
-          className="w-full py-3 rounded-xl bg-zinc-700 disabled:opacity-50 text-zinc-400 font-semibold"
-        >
+        <button disabled className="w-full py-3 rounded-xl bg-zinc-700 disabled:opacity-50 text-zinc-400 font-semibold">
           載入中...
         </button>
       )
@@ -113,6 +110,7 @@ function EventDetailPage() {
         </div>
       )
     }
+
     if (waitlisted) {
       return (
         <div className="bg-amber-900/30 border border-amber-800 rounded-xl px-4 py-3 text-amber-400 text-sm text-center">
@@ -120,6 +118,34 @@ function EventDetailPage() {
         </div>
       )
     }
+
+    // ← 加這段：不符合資格的原因
+    if (!eligibility.eligible) {
+      const reason = eligibility.reason
+      if (reason === "LOCKED") {
+        const unlockAt = eligibility.unlockAt
+          ? new Date(eligibility.unlockAt).toLocaleDateString("zh-TW")
+          : "不明"
+        return (
+          <div className="bg-red-900/30 border border-red-800 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
+            帳號已被鎖定，無法報名（預計 {unlockAt} 解鎖）
+          </div>
+        )
+      }
+      if (reason === "ALREADY_REGISTERED") {
+        return (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-400 text-sm text-center">
+            您已報名此活動
+          </div>
+        )
+      }
+      return (
+        <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-500 text-sm text-center">
+          目前無法報名
+        </div>
+      )
+    }
+
     if (event.status === "registering") {
       return (
         <button
@@ -146,7 +172,7 @@ function EventDetailPage() {
 
     return (
       <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-500 text-sm text-center">
-        目前無法報名
+        目前無法報名（{event.status === "closed" ? "報名已截止" : "活動尚未開放報名"}）
       </div>
     )
   }

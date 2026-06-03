@@ -67,6 +67,25 @@ function CreateEventPage() {
       setMessage("請填寫所有必填欄位")
       return
     }
+    if (form.eventEndTime && new Date(form.eventEndTime) <= new Date(form.eventStartTime)) {
+      setMessage("活動結束時間必須晚於開始時間")
+      return
+    }
+    if (form.registrationStart && form.registrationEnd &&
+        new Date(form.registrationEnd) <= new Date(form.registrationStart)) {
+      setMessage("報名截止時間必須晚於報名開始時間")
+      return
+    }
+    if (form.registrationEnd && form.eventStartTime &&
+        new Date(form.registrationEnd) > new Date(form.eventStartTime)) {
+      setMessage("報名截止時間不能晚於活動開始時間")
+      return
+    }
+    if (form.cancellationDeadline && form.eventStartTime &&
+        new Date(form.cancellationDeadline) > new Date(form.eventStartTime)) {
+      setMessage("取消截止時間不能晚於活動開始時間")
+      return
+    }
 
     setSubmitting(true)
     try {
