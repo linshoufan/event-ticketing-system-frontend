@@ -21,6 +21,22 @@ function getDietLabel(diet: string | null) {
   return map[diet] ?? diet
 }
 
+// 判斷是否可以取消：未超過取消截止時間，且活動還沒開始
+function canCancel(t: Transaction): boolean {
+  if (t.status !== "confirmed") return false
+  const now = new Date()
+  const deadline = (t as any).cancellationDeadline
+  if (deadline) return new Date(deadline) > now
+  return new Date(t.eventStartTime) > now
+}
+
+function getDeadlineText(t: Transaction): string | null {
+  const deadline = (t as any).cancellationDeadline
+  if (!deadline) return null
+  const isPast = new Date(deadline) <= new Date()
+  return `取消截止：${new Date(deadline).toLocaleString("zh-TW")}${isPast ? "（已超過）" : ""}`
+}
+
 function MyTransactionsPage() {
   const navigate = useNavigate()
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -50,8 +66,13 @@ function MyTransactionsPage() {
       await cancelTransaction(transactionId)
       setTransactions(prev => prev.filter(tx => tx.transactionId !== transactionId))
       showToast("取消報名成功", "success")
-    } catch {
-      showToast("取消失敗，請稍後再試", "error")
+    } catch (err: any) {
+      const code = err?.code
+      if (code === "PAST_CANCELLATION_DEADLINE") {
+        showToast("已超過取消截止時間，無法取消", "error")
+      } else {
+        showToast("取消失敗，請稍後再試", "error")
+      }
     }
   }
 
@@ -85,6 +106,8 @@ function MyTransactionsPage() {
           <div className="flex flex-col gap-3">
             {transactions.map(t => {
               const config = STATUS_CONFIG[t.status as TransactionStatus]
+              const cancellable = canCancel(t)
+              const deadlineText = getDeadlineText(t)
               return (
                 <div
                   key={t.transactionId}
@@ -110,11 +133,17 @@ function MyTransactionsPage() {
                     {new Date(t.eventStartTime).toLocaleString("zh-TW")}
                   </p>
 
-                  <div className="flex gap-4 text-sm text-zinc-500 mb-4">
+                  <div className="flex gap-4 text-sm text-zinc-500 mb-3">
                     <span>飲食：{getDietLabel(t.dietType)}</span>
                     <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
                     {t.guestCount > 0 && <span>家屬：{t.guestCount} 人</span>}
                   </div>
+
+                  {t.status === "confirmed" && deadlineText && (
+                    <p className={`text-xs mb-3 ${cancellable ? "text-zinc-500" : "text-red-400"}`}>
+                      {deadlineText}
+                    </p>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-600 text-xs">
@@ -131,10 +160,15 @@ function MyTransactionsPage() {
                       )}
                       {t.status === "confirmed" && (
                         <button
-                          onClick={() => handleCancel(t.transactionId)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 hover:bg-red-900/50 text-red-400 transition-colors"
+                          onClick={() => cancellable && handleCancel(t.transactionId)}
+                          disabled={!cancellable}
+                          className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                            cancellable
+                              ? "bg-red-900/30 hover:bg-red-900/50 text-red-400"
+                              : "bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-50"
+                          }`}
                         >
-                          取消報名
+                          {cancellable ? "取消報名" : "無法取消"}
                         </button>
                       )}
                     </div>
