@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { useQuery } from "@tanstack/react-query"
 import { getEvents } from "../api/events"
-import type { Event } from "../types"
 import EventCard from "../components/EventCard"
 import PageTransition from "../components/PageTransition"
 import { EventCardSkeleton } from "../components/Skeleton"
 import { useDebounce } from "../hooks/useDebounce"
+import { sortEvents, type SortOption } from "../utils/sortEvents"
 
 const CATEGORIES = ["sport", "food", "travel", "culture", "family", "contest", "music"]
 
@@ -15,15 +15,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   sport: "運動", food: "美食", travel: "旅遊",
   culture: "文藝", family: "親子", contest: "競賽", music: "音樂",
 }
-
-type SortOption =
-  | "recommended"
-  | "tickets_asc"
-  | "tickets_desc"
-  | "popular"
-  | "status_registering"
-  | "status_waitlist"
-  | "status_full"
 
 const SORT_LABELS: Record<SortOption, string> = {
   recommended:        "為你推薦",
@@ -33,45 +24,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   status_full:        "已額滿",
   tickets_asc:        "剩餘名額最少",
   tickets_desc:       "剩餘名額最多",
-}
-
-function sortEvents(events: Event[], sort: SortOption): Event[] {
-  const sorted = [...events]
-  switch (sort) {
-    case "tickets_asc":
-      return sorted
-        .filter(e => e.status === "registering")
-        .sort((a, b) => (a.remainingTickets ?? 0) - (b.remainingTickets ?? 0))
-    case "tickets_desc":
-      return sorted
-        .filter(e => e.status === "registering")
-        .sort((a, b) => (b.remainingTickets ?? 0) - (a.remainingTickets ?? 0))
-    case "popular":
-      return sorted.sort((a, b) => {
-        const aRate = a.ticketLimit ? (a.ticketLimit - a.remainingTickets) / a.ticketLimit : 0
-        const bRate = b.ticketLimit ? (b.ticketLimit - b.remainingTickets) / b.ticketLimit : 0
-        return bRate - aRate
-      })
-    case "status_registering":
-      return sorted.filter(e => e.status === "registering")
-    case "status_waitlist":
-      return sorted.filter(e => e.status === "waitlist")
-    case "status_full":
-      return sorted.filter(e =>
-        (e.status === "registering" || e.status === "waitlist") &&
-        e.ticketLimit != null &&
-        e.remainingTickets === 0
-      )
-    case "recommended":
-    default: {
-      const userTags: string[] = JSON.parse(localStorage.getItem("userTags") ?? "[]")
-      return sorted.sort((a, b) => {
-        const aMatch = userTags.includes(a.category) ? 1 : 0
-        const bMatch = userTags.includes(b.category) ? 1 : 0
-        return bMatch - aMatch
-      })
-    }
-  }
 }
 
 function EventListPage() {

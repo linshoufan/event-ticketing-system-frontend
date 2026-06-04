@@ -1,34 +1,17 @@
 import type { Event } from "../types"
+import { getStatusConfig, getCategoryEmoji, isLowTicket, isFull } from "../utils/eventStatus"
 
 interface Props {
   event: Event
   onClick: () => void
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  not_open:    { label: "尚未開始報名", color: "text-zinc-400", bg: "bg-zinc-800" },
-  registering: { label: "報名中",       color: "text-emerald-400", bg: "bg-emerald-900/30" },
-  waitlist:    { label: "候補登記",     color: "text-amber-400", bg: "bg-amber-900/30" },
-  closed:      { label: "報名截止",     color: "text-red-400", bg: "bg-red-900/30" },
-  ended:       { label: "活動結束",     color: "text-zinc-500", bg: "bg-zinc-800" },
-}
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  sport:   "🏃",
-  food:    "🍽️",
-  travel:  "✈️",
-  culture: "🎨",
-  family:  "👨‍👩‍👧",
-  contest: "🏆",
-  music:   "🎵",
-}
-
 function EventCard({ event, onClick }: Props) {
   const isActive = event.status === "registering"
-  const config = STATUS_CONFIG[event.status] ?? { label: event.status, color: "text-zinc-400", bg: "bg-zinc-800" }
-  const emoji = CATEGORY_EMOJI[event.category] ?? "📅"
-  const isLowTicket = event.ticketLimit != null && event.remainingTickets < event.ticketLimit / 10
-  const isFull = event.ticketLimit != null && event.remainingTickets === 0
+  const config = getStatusConfig(event.status)
+  const emoji = getCategoryEmoji(event.category)
+  const lowTicket = isLowTicket(event)
+  const full = isFull(event)
 
   return (
     <div
@@ -76,14 +59,14 @@ function EventCard({ event, onClick }: Props) {
           >
             {config.label}
           </span>
-          {isFull && (
+          {full && (
             <span className="text-xs font-medium px-3 py-1 rounded-full bg-yellow-900/30 text-yellow-400">
               已額滿
             </span>
           )}
-          {event.ticketLimit && !isFull && (
+          {event.ticketLimit && !full && (
             <span className="text-xs text-zinc-500">
-              剩餘 <span className={`font-medium ${isLowTicket ? "text-red-400" : "text-white"}`}>
+              剩餘 <span className={`font-medium ${lowTicket ? "text-red-400" : "text-white"}`}>
                 {event.remainingTickets}
               </span> 位
             </span>
