@@ -39,14 +39,13 @@ function EventManagePage() {
     if (!confirm("確定要刪除這個活動嗎？")) return
     try {
       await deleteEvent(eventId)
-      setEvents(prev => prev.filter(e => e.eventId !== eventId))
+      // 不要直接 setEvents(filter)，改成重抓，以後端為準
+      const res = await getEvents()
+      setEvents(res.data)
     } catch (err: any) {
       const code = err?.code ?? err?.error?.code
-      if (code === "EVENT_NOT_DELETABLE") {
-        alert("此活動已開始報名，無法刪除")
-      } else {
-        alert("刪除失敗，請稍後再試")
-      }
+      if (code === "EVENT_NOT_DELETABLE") alert("此活動已開始報名，無法刪除")
+      else alert("刪除失敗，請稍後再試")
     }
   }
 

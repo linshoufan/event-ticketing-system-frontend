@@ -37,48 +37,49 @@ function HRDashboardPage() {
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    const controller = new AbortController()
-    setLoading(true)
-    setError(false)
+      const controller = new AbortController()
+      setLoading(true)
+      setError(false)
 
-    // Step 1：先拿所有活動清單
-    getEvents(undefined, controller.signal)
-      .then(async (eventsRes) => {
-        const events = eventsRes.data
+      getEvents(undefined, controller.signal)
+        .then(async (eventsRes) => {
+          const events = eventsRes.data
 
-        // Step 2：對每個活動，同時打 registrations + tickets 兩支 API
-        const statsPromises = events.map(async (event) => {
-          const [regData, ticketData] = await Promise.all([
-            getEventRegistrations(event.eventId, undefined, controller.signal),
-            getEventTickets(event.eventId, undefined, controller.signal),
-          ])
-          console.log("regData:", JSON.stringify(regData))      // ← 加這行
-          console.log("ticketData:", JSON.stringify(ticketData)) // ← 加這行
-          return {
-            eventId: event.eventId,
-            eventName: event.name,
-            ticketLimit: event.ticketLimit,
-            totalConfirmed: regData.data.summary.totalConfirmed,   // ← 加 .data
-            totalWaitlist:  regData.data.summary.totalWaitlist,    // ← 加 .data
-            totalCancelled: regData.data.summary.totalCancelled,   // ← 加 .data
-            totalCheckedIn: ticketData.data.summary.used,          // ← 這個本來就對
-          } satisfies EventStat
+          const statsPromises = events.map(async (event) => {
+            const [regData, ticketData] = await Promise.all([
+              getEventRegistrations(event.eventId, undefined, controller.signal),
+              getEventTickets(event.eventId, undefined, controller.signal),
+            ])
+            return {
+              eventId: event.eventId,
+              eventName: event.name,
+              ticketLimit: event.ticketLimit,
+              totalConfirmed: regData.data.summary.totalConfirmed,
+              totalWaitlist:  regData.data.summary.totalWaitlist,
+              totalCancelled: regData.data.summary.totalCancelled,
+              totalCheckedIn: ticketData.data.summary.used,
+            } satisfies EventStat
           })
 
-        // 等所有活動的資料都回來
-        const allStats = await Promise.all(statsPromises)
-        setStats(allStats)
-        setLoading(false)
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return
-        console.log("HR Dashboard 錯誤：", err)  // ← 加這行
-        setError(true)
-        setLoading(false)
-      })
+          // 用 allSettled：個別活動失敗只跳過該筆，不會讓整頁掛掉
+          const results = await Promise.allSettled(statsPromises)
+          if (controller.signal.aborted) return
 
-    return () => controller.abort()
-  }, [])
+          const allStats = results
+            .filter((r): r is PromiseFulfilledResult<EventStat> => r.status === "fulfilled")
+            .map(r => r.value)
+
+          setStats(allStats)
+          setLoading(false)
+        })
+        .catch((err) => {
+          if (err.name === "AbortError") return
+          setError(true)
+          setLoading(false)
+        })
+
+      return () => controller.abort()
+    }, [])
 
   // 以下是前端自己算的加總
   const totalEvents = stats.length
