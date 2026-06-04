@@ -63,6 +63,7 @@ function sortEvents(events: Event[], sort: SortOption): Event[] {
     case "status_full":
       return sorted.filter(e =>
         (e.status === "registering" || e.status === "waitlist") &&
+        e.ticketLimit != null &&
         e.remainingTickets === 0
       )
     case "recommended":
