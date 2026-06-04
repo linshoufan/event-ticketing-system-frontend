@@ -19,6 +19,15 @@ function delay<T>(data: T, ms: number = mockDelayMs, signal?: AbortSignal): Prom
   })
 }
 
+// 統一處理 fetch 回應：檢查 res.ok、安全解析 JSON、統一錯誤結構
+async function handleResponse(res: Response) {
+  const json = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw json?.error ?? { code: "REQUEST_FAILED", message: `HTTP ${res.status}` }
+  }
+  return json
+}
+
 export async function getEvents(
   params?: {
     page?: number
@@ -42,7 +51,11 @@ export async function getEvents(
     if (params?.category) {
       data = data.filter(e => e.category === params.category)
     }
-    return delay({ data, pagination: { page: 1, limit: data.length, total: data.length } }, mockDelayMs, signal)
+    return delay(
+      { data, pagination: { page: 1, limit: data.length, total: data.length } },
+      mockDelayMs,
+      signal
+    )
   }
 
   const query = new URLSearchParams(
@@ -51,25 +64,53 @@ export async function getEvents(
       .map(([k, v]) => [k, String(v)])
   )
   const res = await fetch(`${BASE_URL}/events?${query}`, { headers: getAuthHeaders(), signal })
-  return res.json()
+  const json = await handleResponse(res)
+
+  // 自動判斷後端結構：一層 { data: [...] } 或兩層 { data: { data: [...] } }
+  let events: Event[] = []
+  let pagination = { page: 1, limit: 0, total: 0 }
+
+  if (Array.isArray(json?.data)) {
+    events = json.data
+    pagination = json.pagination ?? pagination
+  } else if (Array.isArray(json?.data?.data)) {
+    events = json.data.data
+    pagination = json.data.pagination ?? pagination
+  } else if (Array.isArray(json)) {
+    events = json
+  }
+
+  return {
+    data: events,
+    pagination: {
+      page: pagination.page ?? 1,
+      limit: pagination.limit ?? events.length,
+      total: pagination.total ?? events.length,
+    },
+  }
 }
 
 export async function getEventById(eventId: string, signal?: AbortSignal): Promise<Event> {
   if (useMock) {
     const { MOCK_EVENTS } = await import("../mock/events")
     const event = MOCK_EVENTS.find(e => e.eventId === eventId)
-    if (!event) throw new Error("Event not found")
+    if (!event) throw { code: "EVENT_NOT_FOUND", message: "Event not found" }
     return delay(event, mockDelayMs, signal)
   }
 
   const res = await fetch(`${BASE_URL}/events/${eventId}`, { headers: getAuthHeaders(), signal })
-  const json = await res.json()
+  const json = await handleResponse(res)
+  if (!json.data) throw { code: "EVENT_NOT_FOUND", message: "Event not found" }
   return json.data
 }
 
 export async function createEvent(body: Partial<Event>) {
   if (useMock) {
-    return delay({ eventId: `ev_${Date.now()}`, isDraft: body.isDraft ?? true, createdAt: new Date().toISOString() })
+    return delay({
+      eventId: `ev_${Date.now()}`,
+      isDraft: body.isDraft ?? true,
+      createdAt: new Date().toISOString(),
+    })
   }
 
   const res = await fetch(`${BASE_URL}/events`, {
@@ -77,7 +118,7 @@ export async function createEvent(body: Partial<Event>) {
     headers: getAuthHeaders(),
     body: JSON.stringify(body),
   })
-  const json = await res.json()
+  const json = await handleResponse(res)
   return json.data
 }
 
@@ -91,7 +132,7 @@ export async function updateEvent(eventId: string, body: Partial<Event>) {
     headers: getAuthHeaders(),
     body: JSON.stringify(body),
   })
-  const json = await res.json()
+  const json = await handleResponse(res)
   return json.data
 }
 
@@ -104,11 +145,6 @@ export async function deleteEvent(eventId: string) {
     method: "DELETE",
     headers: getAuthHeaders(),
   })
-  const json = await res.json()
-
-  if (!res.ok) {
-    throw json.error  // ? ????? catch ?????
-  }
-
+  const json = await handleResponse(res)
   return json.data
 }
