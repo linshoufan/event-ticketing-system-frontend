@@ -23,18 +23,16 @@ type SortOption =
   | "popular"
   | "status_registering"
   | "status_waitlist"
-  | "status_closed"
   | "status_full"
 
 const SORT_LABELS: Record<SortOption, string> = {
   recommended:        "為你推薦",
+  popular:            "最熱門",
   status_registering: "報名中",
   status_waitlist:    "候補中",
-  status_closed:      "報名截止",
   status_full:        "已額滿",
-  popular:            "最熱門",
-  tickets_asc:        "名額最少",
-  tickets_desc:       "名額最多",
+  tickets_asc:        "剩餘名額最少",
+  tickets_desc:       "剩餘名額最多",
 }
 
 function sortEvents(events: Event[], sort: SortOption): Event[] {
@@ -58,8 +56,6 @@ function sortEvents(events: Event[], sort: SortOption): Event[] {
       return sorted.filter(e => e.status === "registering")
     case "status_waitlist":
       return sorted.filter(e => e.status === "waitlist")
-    case "status_closed":
-      return sorted.filter(e => e.status === "closed")
     case "status_full":
       return sorted.filter(e =>
         (e.status === "registering" || e.status === "waitlist") &&
