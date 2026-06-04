@@ -1,4 +1,4 @@
-import type { Event, PaginatedResponse } from "../types"
+﻿import type { Event, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
 import { APP_CONFIG } from "../config/app.config"
 
@@ -19,7 +19,6 @@ function delay<T>(data: T, ms: number = mockDelayMs, signal?: AbortSignal): Prom
   })
 }
 
-// 統一處理 fetch 回應：檢查 res.ok、安全解析 JSON、統一錯誤結構
 async function handleResponse(res: Response) {
   const json = await res.json().catch(() => null)
   if (!res.ok) {
@@ -66,33 +65,16 @@ export async function getEvents(
   const res = await fetch(`${BASE_URL}/events?${query}`, { headers: getAuthHeaders(), signal })
   const json = await handleResponse(res)
 
-<<<<<<< HEAD
-  // ?????????????? { data: [...] } ??? { data: { data: [...] } }
-=======
-  // 自動判斷後端結構：一層 { data: [...] } 或兩層 { data: { data: [...] } }
->>>>>>> 1e37630646f09ad9a9cdeec503982d85e2821d7d
   let events: Event[] = []
   let pagination = { page: 1, limit: 0, total: 0 }
 
   if (Array.isArray(json?.data)) {
-<<<<<<< HEAD
-    // ???{ data: [...], pagination }
-    events = json.data
-    pagination = json.pagination ?? pagination
-  } else if (Array.isArray(json?.data?.data)) {
-    // ???{ data: { data: [...], pagination } }
-    events = json.data.data
-    pagination = json.data.pagination ?? pagination
-  } else if (Array.isArray(json)) {
-    // ???????????
-=======
     events = json.data
     pagination = json.pagination ?? pagination
   } else if (Array.isArray(json?.data?.data)) {
     events = json.data.data
     pagination = json.data.pagination ?? pagination
   } else if (Array.isArray(json)) {
->>>>>>> 1e37630646f09ad9a9cdeec503982d85e2821d7d
     events = json
   }
 
