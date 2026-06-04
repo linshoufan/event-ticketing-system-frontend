@@ -28,6 +28,7 @@ function EventCard({ event, onClick }: Props) {
   const config = STATUS_CONFIG[event.status] ?? { label: event.status, color: "text-zinc-400", bg: "bg-zinc-800" }
   const emoji = CATEGORY_EMOJI[event.category] ?? "📅"
   const isLowTicket = event.ticketLimit != null && event.remainingTickets < event.ticketLimit / 10
+  const isFull = event.ticketLimit != null && event.remainingTickets === 0
 
   return (
     <div
@@ -75,7 +76,12 @@ function EventCard({ event, onClick }: Props) {
           >
             {config.label}
           </span>
-          {event.ticketLimit && (
+          {isFull && (
+            <span className="text-xs font-medium px-3 py-1 rounded-full bg-yellow-900/30 text-yellow-400">
+              已額滿
+            </span>
+          )}
+          {event.ticketLimit && !isFull && (
             <span className="text-xs text-zinc-500">
               剩餘 <span className={`font-medium ${isLowTicket ? "text-red-400" : "text-white"}`}>
                 {event.remainingTickets}
