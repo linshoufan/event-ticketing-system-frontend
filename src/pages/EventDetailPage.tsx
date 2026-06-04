@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { getEventById } from "../api/events"
 import { checkEligibility, createTransaction } from "../api/transactions"
+import { getMe } from "../api/auth"
 import type { Event } from "../types"
 import PageTransition from "../components/PageTransition"
 import Toast from "../components/Toast"
@@ -28,6 +29,7 @@ function EventDetailPage() {
   const [guestCount, setGuestCount] = useState(0)
   const [registering, setRegistering] = useState(false)
   const [waitlisted, setWaitlisted] = useState(false)
+  const [autofillApplied, setAutofillApplied] = useState(false)
 
   // 活動資料：5 分鐘內用快取
   const { data: event, isLoading: eventLoading } = useQuery<Event>({
@@ -44,6 +46,22 @@ function EventDetailPage() {
     enabled: !!eventId,
     staleTime: 0,
   })
+
+  // 使用者個人資料：帶入 autofill 設定，5 分鐘快取
+  const { data: me } = useQuery({
+    queryKey: ["me"],
+    queryFn: ({ signal }) => getMe(signal),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  // 當使用者資料載入後，自動帶入 autofill 偏好（只帶入一次）
+  useEffect(() => {
+    if (me && !autofillApplied) {
+      setDietType(me.dietType)
+      setSelfDriving(me.selfDriving ?? false)
+      setAutofillApplied(true)
+    }
+  }, [me, autofillApplied])
 
   useEffect(() => {
     if (eligibility?.reason === "ALREADY_REGISTERED") {
@@ -246,7 +264,12 @@ function EventDetailPage() {
         )}
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-4">
-          <h3 className="text-white font-semibold mb-4">報名資料</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold">報名資料</h3>
+            {me?.dietType || me?.selfDriving ? (
+              <span className="text-xs text-zinc-500">已自動帶入個人設定</span>
+            ) : null}
+          </div>
           <div className="flex flex-col gap-4">
             <div>
               <label className="text-zinc-400 text-sm block mb-2">飲食需求</label>

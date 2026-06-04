@@ -42,7 +42,11 @@ export async function getEvents(
     if (params?.category) {
       data = data.filter(e => e.category === params.category)
     }
-    return delay({ data, pagination: { page: 1, limit: data.length, total: data.length } }, mockDelayMs, signal)
+    return delay(
+      { data, pagination: { page: 1, limit: data.length, total: data.length } },
+      mockDelayMs,
+      signal
+    )
   }
 
   const query = new URLSearchParams(
@@ -51,7 +55,33 @@ export async function getEvents(
       .map(([k, v]) => [k, String(v)])
   )
   const res = await fetch(`${BASE_URL}/events?${query}`, { headers: getAuthHeaders(), signal })
-  return res.json()
+  const json = await handleResponse(res)
+
+  // ?????????????? { data: [...] } ??? { data: { data: [...] } }
+  let events: Event[] = []
+  let pagination = { page: 1, limit: 0, total: 0 }
+
+  if (Array.isArray(json?.data)) {
+    // ???{ data: [...], pagination }
+    events = json.data
+    pagination = json.pagination ?? pagination
+  } else if (Array.isArray(json?.data?.data)) {
+    // ???{ data: { data: [...], pagination } }
+    events = json.data.data
+    pagination = json.data.pagination ?? pagination
+  } else if (Array.isArray(json)) {
+    // ???????????
+    events = json
+  }
+
+  return {
+    data: events,
+    pagination: {
+      page: pagination.page ?? 1,
+      limit: pagination.limit ?? events.length,
+      total: pagination.total ?? events.length,
+    },
+  }
 }
 
 export async function getEventById(eventId: string, signal?: AbortSignal): Promise<Event> {
