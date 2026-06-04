@@ -24,12 +24,14 @@ type SortOption =
   | "status_registering"
   | "status_waitlist"
   | "status_closed"
+  | "status_full"
 
 const SORT_LABELS: Record<SortOption, string> = {
   recommended:        "為你推薦",
   status_registering: "報名中",
   status_waitlist:    "候補中",
   status_closed:      "報名截止",
+  status_full:        "已額滿",
   popular:            "最熱門",
   tickets_asc:        "名額最少",
   tickets_desc:       "名額最多",
@@ -58,6 +60,11 @@ function sortEvents(events: Event[], sort: SortOption): Event[] {
       return sorted.filter(e => e.status === "waitlist")
     case "status_closed":
       return sorted.filter(e => e.status === "closed")
+    case "status_full":
+      return sorted.filter(e =>
+        (e.status === "registering" || e.status === "waitlist") &&
+        e.remainingTickets === 0
+      )
     case "recommended":
     default: {
       const userTags: string[] = JSON.parse(localStorage.getItem("userTags") ?? "[]")
@@ -86,7 +93,6 @@ function EventListPage() {
     debouncedSetKeyword(e.target.value)
   }
 
-  // React Query：keyword 或 category 變了自動重新打，3 分鐘內用快取
   const { data, isLoading } = useQuery({
     queryKey: ["events", keyword, category],
     queryFn: ({ signal }) => getEvents({ keyword, category }, signal),

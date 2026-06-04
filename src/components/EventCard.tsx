@@ -27,6 +27,7 @@ function EventCard({ event, onClick }: Props) {
   const isActive = event.status === "registering"
   const config = STATUS_CONFIG[event.status] ?? { label: event.status, color: "text-zinc-400", bg: "bg-zinc-800" }
   const emoji = CATEGORY_EMOJI[event.category] ?? "📅"
+  const isLowTicket = event.ticketLimit != null && event.remainingTickets < event.ticketLimit / 10
 
   return (
     <div
@@ -76,7 +77,9 @@ function EventCard({ event, onClick }: Props) {
           </span>
           {event.ticketLimit && (
             <span className="text-xs text-zinc-500">
-              剩餘 <span className="text-white font-medium">{event.remainingTickets}</span> / {event.ticketLimit} 位
+              剩餘 <span className={`font-medium ${isLowTicket ? "text-red-400" : "text-white"}`}>
+                {event.remainingTickets}
+              </span> 位
             </span>
           )}
         </div>
