@@ -3,12 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from "../api/notifications"
 import type { Notification } from "../types"
 
-const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-  REGISTRATION_SUCCESS: { label: "報名成功",   color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
-  WAITLIST_PROMOTED:    { label: "候補升正取", color: "text-amber-400",   bg: "bg-amber-900/30",   dot: "bg-amber-400" },
-  EVENT_REMINDER:       { label: "活動提醒",   color: "text-blue-400",    bg: "bg-blue-900/30",    dot: "bg-blue-400" },
-  ACCOUNT_LOCKED:       { label: "帳號鎖定",   color: "text-red-400",     bg: "bg-red-900/30",     dot: "bg-red-400" },
-  ACCOUNT_UNLOCKED:     { label: "帳號解鎖",   color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
+const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; bar: string }> = {
+  REGISTRATION_SUCCESS: { label: "報名成功",   color: "text-emerald-400", bg: "bg-emerald-900/30", bar: "bg-emerald-500" },
+  WAITLIST_PROMOTED:    { label: "候補升正取", color: "text-amber-400",   bg: "bg-amber-900/30",   bar: "bg-amber-500" },
+  EVENT_REMINDER:       { label: "活動提醒",   color: "text-zinc-400",    bg: "bg-zinc-800",        bar: "bg-zinc-500" },
+  ACCOUNT_LOCKED:       { label: "帳號鎖定",   color: "text-red-400",     bg: "bg-red-900/30",      bar: "bg-red-500" },
+  ACCOUNT_UNLOCKED:     { label: "帳號解鎖",   color: "text-emerald-400", bg: "bg-emerald-900/30",  bar: "bg-emerald-500" },
 }
 
 function timeAgo(dateStr: string): string {
@@ -23,7 +23,7 @@ function timeAgo(dateStr: string): string {
 
 function NotificationBell() {
   const [open, setOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
 
   const { data } = useQuery({
@@ -37,28 +37,25 @@ function NotificationBell() {
   const unreadCount = notifications.filter(n => !n.read).length
 
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    if (open) document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
+    if (open) document.addEventListener("mousedown", onClickOutside)
+    return () => document.removeEventListener("mousedown", onClickOutside)
   }, [open])
 
-  async function handleClickNotification(n: Notification) {
-    if (!n.read) {
-      queryClient.setQueryData(["notifications"], (old: any) => ({
-        ...old,
-        data: old.data.map((item: Notification) =>
-          item.notificationId === n.notificationId ? { ...item, read: true } : item
-        ),
-      }))
-      await markNotificationRead(n.notificationId).catch(() => {})
-    }
+  async function handleRead(n: Notification) {
+    if (n.read) return
+    queryClient.setQueryData(["notifications"], (old: any) => ({
+      ...old,
+      data: old.data.map((item: Notification) =>
+        item.notificationId === n.notificationId ? { ...item, read: true } : item
+      ),
+    }))
+    await markNotificationRead(n.notificationId).catch(() => {})
   }
 
-  async function handleMarkAllRead() {
+  async function handleReadAll() {
     queryClient.setQueryData(["notifications"], (old: any) => ({
       ...old,
       data: old.data.map((item: Notification) => ({ ...item, read: true })),
@@ -67,26 +64,44 @@ function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={ref}>
+
+      {/* 鈴鐺按鈕 */}
       <button
-        onClick={() => setOpen(prev => !prev)}
-        className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center justify-center text-base"
+        onClick={() => setOpen(v => !v)}
+        className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center justify-center text-sm"
       >
         🔔
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-            {unreadCount > 99 ? "99+" : unreadCount}
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none tabular-nums">
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
+      {/* 下拉面板 */}
       {open && (
-        <div className="absolute right-0 top-10 w-80 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-            <span className="text-white font-semibold text-sm">通知</span>
+        <div className={`
+          absolute right-0 top-full mt-2 w-72 sm:w-80
+          bg-zinc-900/95 backdrop-blur-sm
+          border border-zinc-800 rounded-2xl
+          shadow-2xl overflow-hidden z-50
+          transition-all duration-200
+        `}>
+
+          {/* 標頭 */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-white font-semibold text-sm">通知</span>
+              {unreadCount > 0 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                  {unreadCount} 則未讀
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button
-                onClick={handleMarkAllRead}
+                onClick={handleReadAll}
                 className="text-zinc-500 hover:text-zinc-300 text-xs transition-colors"
               >
                 全部已讀
@@ -94,37 +109,50 @@ function NotificationBell() {
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="border-t border-zinc-800/60" />
+
+          {/* 通知列表 */}
+          <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="text-center py-10 text-zinc-500 text-sm">
-                <p className="text-3xl mb-2">🔔</p>
-                <p>目前沒有通知</p>
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <span className="text-2xl opacity-40">🔔</span>
+                <span className="text-zinc-600 text-sm">沒有通知</span>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800">
-                {notifications.map(n => {
+              <div>
+                {notifications.map((n, i) => {
                   const config = TYPE_CONFIG[n.type] ?? TYPE_CONFIG.EVENT_REMINDER
                   return (
-                    <div
-                      key={n.notificationId}
-                      onClick={() => handleClickNotification(n)}
-                      className={`flex gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-zinc-800/60 ${
-                        !n.read ? "bg-zinc-800/30" : ""
-                      }`}
-                    >
-                      <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!n.read ? config.dot : "bg-transparent"}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-0.5">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                            {config.label}
-                          </span>
-                          <span className="text-zinc-600 text-xs flex-shrink-0">{timeAgo(n.createdAt)}</span>
+                    <div key={n.notificationId}>
+                      <div
+                        onClick={() => handleRead(n)}
+                        className="relative flex gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors cursor-pointer group"
+                      >
+                        {/* 未讀左側色條 */}
+                        {!n.read && (
+                          <div className={`absolute left-0 top-2.5 bottom-2.5 w-0.5 rounded-r-full ${config.bar}`} />
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                              {config.label}
+                            </span>
+                            <span className="text-zinc-600 text-[10px] flex-shrink-0">
+                              {timeAgo(n.createdAt)}
+                            </span>
+                          </div>
+                          <p className={`text-xs leading-snug ${!n.read ? "text-white font-medium" : "text-zinc-400"}`}>
+                            {n.title}
+                          </p>
+                          <p className="text-[11px] text-zinc-600 mt-0.5 line-clamp-2 leading-relaxed">
+                            {n.message}
+                          </p>
                         </div>
-                        <p className={`text-sm ${!n.read ? "text-white font-medium" : "text-zinc-400"} leading-snug`}>
-                          {n.title}
-                        </p>
-                        <p className="text-zinc-500 text-xs mt-0.5 line-clamp-2">{n.message}</p>
                       </div>
+                      {i < notifications.length - 1 && (
+                        <div className="border-t border-zinc-800/40 mx-4" />
+                      )}
                     </div>
                   )
                 })}
