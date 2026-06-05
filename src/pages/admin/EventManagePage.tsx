@@ -126,6 +126,12 @@ function EventManagePage() {
                       </button>
                     )}
                     <button
+                      onClick={() => navigate(`/admin/events/${event.eventId}/edit`)}
+                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors"
+                    >
+                      編輯
+                    </button>
+                    <button
                       onClick={() => navigate(`/admin/events/${event.eventId}/registrations`)}
                       className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition-colors"
                     >

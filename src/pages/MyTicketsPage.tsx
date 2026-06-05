@@ -4,12 +4,8 @@ import { getTickets } from "../api/tickets"
 import type { Ticket, TicketStatus } from "../types"
 import PageTransition from "../components/PageTransition"
 import { TicketCardSkeleton } from "../components/Skeleton"
+import { TICKET_STATUS_CONFIG as STATUS_CONFIG } from "../utils/ticketStatus"
 
-const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; bg: string; dot: string }> = {
-  unused:  { label: "可報到", color: "text-emerald-400", bg: "bg-emerald-900/30", dot: "bg-emerald-400" },
-  used:    { label: "已報到", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-500" },
-  invalid: { label: "未開放", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-600" },
-}
 
 function MyTicketsPage() {
   const navigate = useNavigate()

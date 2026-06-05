@@ -6,7 +6,7 @@ import PageTransition from "../components/PageTransition"
 import { TransactionCardSkeleton } from "../components/Skeleton"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
-
+import { getDietLabel } from "../utils/diet"
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
 const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; bg: string; dot: string }> = {
@@ -15,11 +15,7 @@ const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; b
   cancelled: { label: "已取消", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-600" },
 }
 
-function getDietLabel(diet: string | null) {
-  if (!diet) return "無需求"
-  const map: Record<string, string> = { veg: "素食", "non-veg": "葷食" }
-  return map[diet] ?? diet
-}
+
 
 // 判斷是否可以取消：未超過取消截止時間，且活動還沒開始
 function canCancel(t: Transaction): boolean {

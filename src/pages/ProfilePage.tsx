@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { getMe } from "../api/auth"
 import { updateUser } from "../api/users"
 import type { User } from "../types"
+import { getRoleLabel } from "../utils/roles"
 import PageTransition from "../components/PageTransition"
 
 const CATEGORIES = [
@@ -74,11 +75,7 @@ function ProfilePage() {
     }
   }
 
-  function getRoleLabel(r: string | null) {
-    if (r === "welfare_member") return "福委會"
-    if (r === "hr") return "HR"
-    return "一般員工"
-  }
+
 
   if (loading) return (
     <div className="text-center py-16 text-zinc-500">載入中...</div>

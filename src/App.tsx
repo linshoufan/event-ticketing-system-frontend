@@ -17,7 +17,7 @@ const UserManagePage = lazy(() => import("./pages/admin/UserManagePage"))
 const CreateEventPage = lazy(() => import("./pages/admin/CreateEventPage"))
 const CheckinPage = lazy(() => import("./pages/admin/CheckinPage"))
 const HRDashboardPage = lazy(() => import("./pages/admin/HRDashboardPage"))
-
+const EditEventPage = lazy(() => import("./pages/admin/EditEventPage"))
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token")
@@ -67,6 +67,7 @@ function Layout() {
           <Route path="/my-tickets/:ticketId" element={<PrivateRoute><TicketDetailPage /></PrivateRoute>} />
           <Route path="/admin/events" element={<PrivateRoute><EventManagePage /></PrivateRoute>} />
           <Route path="/admin/events/new" element={<PrivateRoute><CreateEventPage /></PrivateRoute>} />
+          <Route path="/admin/events/:eventId/edit" element={<PrivateRoute><EditEventPage /></PrivateRoute>} />
           <Route path="/admin/events/:eventId/registrations" element={<PrivateRoute><RegistrationDetailPage /></PrivateRoute>} />
           <Route path="/admin/events/:eventId/checkin" element={<PrivateRoute><CheckinPage /></PrivateRoute>} />
           <Route path="/admin/users" element={<PrivateRoute><UserManagePage /></PrivateRoute>} />
