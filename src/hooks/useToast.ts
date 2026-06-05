@@ -2,7 +2,7 @@ import { useState, useCallback } from "react"
 
 interface ToastState {
   message: string
-  type: "success" | "error" | "info"
+  type: "success" | "error" | "info" | "warning"
   visible: boolean
 }
 
@@ -13,7 +13,7 @@ export function useToast() {
     visible: false,
   })
 
-  const showToast = useCallback((message: string, type: "success" | "error" | "info" = "info") => {
+  const showToast = useCallback((message: string, type: "success" | "error" | "info" | "warning" = "info") => {
     setToast({ message, type, visible: true })
     setTimeout(() => {
       setToast(prev => ({ ...prev, visible: false }))

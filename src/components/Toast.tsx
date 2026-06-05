@@ -1,6 +1,6 @@
 interface ToastProps {
   message: string
-  type: "success" | "error" | "info"
+  type: "success" | "error" | "info" | "warning"
   visible: boolean
 }
 
@@ -8,6 +8,7 @@ const TYPE_CONFIG = {
   success: "bg-emerald-900/90 border-emerald-700 text-emerald-300",
   error:   "bg-red-900/90 border-red-700 text-red-300",
   info:    "bg-zinc-800/90 border-zinc-700 text-zinc-300",
+  warning: "bg-amber-900/90 border-amber-700 text-amber-300",
 }
 
 function Toast({ message, type, visible }: ToastProps) {
@@ -24,6 +25,7 @@ function Toast({ message, type, visible }: ToastProps) {
         {type === "success" && <span>✓</span>}
         {type === "error" && <span>✕</span>}
         {type === "info" && <span>ℹ</span>}
+        {type === "warning" && <span>⚡</span>}
         {message}
       </div>
     </div>

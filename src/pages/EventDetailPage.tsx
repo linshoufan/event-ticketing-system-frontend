@@ -91,7 +91,7 @@ function EventDetailPage() {
         showToast("您已報名此活動", "info")
         setAlreadyRegistered(true)
       } else if (code === "NO_TICKETS") {
-        showToast("名額剛好額滿，已為您加入候補", "info")
+        showToast("差一點！名額剛好在此時售完，已自動為您加入候補名單", "warning")
         setWaitlisted(true)
         refetchEligibility()
       } else if (code === "ACCOUNT_LOCKED") {

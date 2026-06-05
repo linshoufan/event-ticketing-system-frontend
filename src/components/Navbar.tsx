@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { removeToken } from "../api/auth"
+import NotificationBell from "./NotificationBell"
 
 function Navbar() {
   const navigate = useNavigate()
@@ -72,6 +73,7 @@ function Navbar() {
             </>
           )}
           <span className={linkClass("/profile")} onClick={() => navigate("/profile")}>個人</span>
+          <NotificationBell />
           <button
             onClick={handleLogout}
             className="ml-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 transition-colors whitespace-nowrap"
