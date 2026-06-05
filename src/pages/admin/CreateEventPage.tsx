@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { createEvent } from "../../api/events"
 import PageTransition from "../../components/PageTransition"
@@ -49,19 +49,43 @@ function CreateEventPage() {
     isDraft: true,
   })
 
-  // 自動計算報名截止時間
-  useEffect(() => {
-    if (!form.registrationStart || !registrationDays || Number(registrationDays) <= 0) return
-    const start = new Date(form.registrationStart)
-    const end = new Date(start.getTime() + Number(registrationDays) * 24 * 60 * 60 * 1000)
-    setForm(prev => ({ ...prev, registrationEnd: toDatetimeLocal(end) }))
-  }, [form.registrationStart, registrationDays])
-
+  // 通用欄位變更；若改的是 registrationStart 且已填天數，同步重算截止時間
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) {
     const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
+    setForm(prev => {
+      const updated = { ...prev, [name]: value }
+      if (name === "registrationStart" && registrationDays && Number(registrationDays) > 0 && value) {
+        const start = new Date(value)
+        const end = new Date(start.getTime() + Number(registrationDays) * 86400000)
+        updated.registrationEnd = toDatetimeLocal(end)
+      }
+      return updated
+    })
+  }
+
+  // 填入天數 → 自動算截止日期
+  function handleDaysChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const days = e.target.value
+    setRegistrationDays(days)
+    if (form.registrationStart && days && Number(days) > 0) {
+      const start = new Date(form.registrationStart)
+      const end = new Date(start.getTime() + Number(days) * 86400000)
+      setForm(prev => ({ ...prev, registrationEnd: toDatetimeLocal(end) }))
+    }
+  }
+
+  // 手動選截止日期 → 反推天數
+  function handleEndDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const endStr = e.target.value
+    setForm(prev => ({ ...prev, registrationEnd: endStr }))
+    if (form.registrationStart && endStr) {
+      const diffDays = Math.round(
+        (new Date(endStr).getTime() - new Date(form.registrationStart).getTime()) / 86400000
+      )
+      setRegistrationDays(diffDays > 0 ? String(diffDays) : "")
+    }
   }
 
   function addFaq() {
@@ -79,8 +103,8 @@ function CreateEventPage() {
   }
 
   async function handleSubmit(isDraft: boolean) {
-    if (!registrationDays || Number(registrationDays) <= 0) {
-      setMessage("請輸入報名開放天數")
+    if (!form.registrationEnd) {
+      setMessage("請填入報名截止時間（天數或自訂日期）")
       return
     }
 
@@ -196,24 +220,32 @@ function CreateEventPage() {
               <input type="datetime-local" name="registrationStart" value={form.registrationStart} onChange={handleChange} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>報名開放天數 *</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={registrationDays}
-                  onChange={e => setRegistrationDays(e.target.value)}
-                  placeholder="7"
-                  className={inputClass}
-                />
-                <span className="text-zinc-500 text-sm whitespace-nowrap flex-shrink-0">天</span>
+              <label className={labelClass}>報名截止時間 *</label>
+              <div className="flex flex-col gap-2">
+                {/* 方式一：填天數 */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={registrationDays}
+                    onChange={handleDaysChange}
+                    placeholder="天數"
+                    className={inputClass}
+                  />
+                  <span className="text-zinc-500 text-xs whitespace-nowrap flex-shrink-0">天後截止</span>
+                </div>
+                {/* 方式二：手動選日期 */}
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-600 text-xs whitespace-nowrap flex-shrink-0 w-4">或</span>
+                  <input
+                    type="datetime-local"
+                    value={form.registrationEnd}
+                    onChange={handleEndDateChange}
+                    className={inputClass}
+                  />
+                </div>
               </div>
-              {form.registrationEnd && (
-                <p className="text-zinc-500 text-xs mt-1.5">
-                  截止：{new Date(form.registrationEnd).toLocaleString("zh-TW")}
-                </p>
-              )}
             </div>
           </div>
         </div>
