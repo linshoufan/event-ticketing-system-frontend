@@ -63,13 +63,18 @@ describe("EventCard 顯示內容", () => {
     expect(screen.getByTestId("event-status")).toHaveTextContent("活動結束")
   })
 
-  it("有票數限制時應該顯示剩餘名額", () => {
+  it("有票數限制時應該顯示總名額", () => {
     render(<EventCard event={mockEvent} onClick={() => {}} />)
-    expect(screen.getByText("12")).toBeInTheDocument()
+    expect(screen.getByText("50")).toBeInTheDocument()
   })
 
-  it("沒有票數限制時不應該顯示剩餘名額", () => {
+  it("沒有票數限制時不應該顯示名額", () => {
     render(<EventCard event={{ ...mockEvent, ticketLimit: null }} onClick={() => {}} />)
+    expect(screen.queryByText("50")).not.toBeInTheDocument()
+  })
+
+  it("不應該顯示 remainingTickets（避免誤導使用者，因為不是 atomic 資料）", () => {
+    render(<EventCard event={mockEvent} onClick={() => {}} />)
     expect(screen.queryByText("12")).not.toBeInTheDocument()
   })
 })

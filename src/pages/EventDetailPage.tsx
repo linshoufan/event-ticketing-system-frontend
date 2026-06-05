@@ -31,7 +31,7 @@ function EventDetailPage() {
   const [waitlisted, setWaitlisted] = useState(false)
   const [autofillApplied, setAutofillApplied] = useState(false)
 
-  // 活動資料：5 分鐘內用快取
+  // 活動靜態資料：5 分鐘快取（不包含即時票數）
   const { data: event, isLoading: eventLoading } = useQuery<Event>({
     queryKey: ["event", eventId],
     queryFn: ({ signal }) => getEventById(eventId!, signal),
@@ -39,7 +39,7 @@ function EventDetailPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  // 報名資格：每次都重新確認（staleTime: 0）
+  // 報名資格 + 即時剩餘票數：每次都重新確認（staleTime: 0）
   const { data: eligibility, refetch: refetchEligibility } = useQuery({
     queryKey: ["eligibility", eventId],
     queryFn: ({ signal }) => checkEligibility(eventId!, signal),
@@ -159,19 +159,22 @@ function EventDetailPage() {
       )
     }
 
-    if (event.status === "registering") {
+    // 活動本身要在可動作的狀態，否則顯示無法報名
+    const isActionable = event.status === "registering" || event.status === "waitlist"
+    if (!isActionable) {
+      const reasonText =
+        event.status === "closed" ? "報名已截止"
+        : event.status === "ended" ? "活動已結束"
+        : "活動尚未開放報名"
       return (
-        <button
-          onClick={handleRegister}
-          disabled={registering}
-          className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold transition-colors"
-        >
-          {registering ? "報名中..." : "立即報名"}
-        </button>
+        <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-500 text-sm text-center">
+          目前無法報名（{reasonText}）
+        </div>
       )
     }
 
-    if (event.status === "waitlist") {
+    // 由 eligibility（即時資料）決定是正取還是候補
+    if (eligibility.isWaitlist) {
       return (
         <button
           onClick={handleRegister}
@@ -184,9 +187,13 @@ function EventDetailPage() {
     }
 
     return (
-      <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-500 text-sm text-center">
-        目前無法報名（{event.status === "closed" ? "報名已截止" : "活動尚未開放報名"}）
-      </div>
+      <button
+        onClick={handleRegister}
+        disabled={registering}
+        className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold transition-colors"
+      >
+        {registering ? "報名中..." : "立即報名"}
+      </button>
     )
   }
 
@@ -243,7 +250,15 @@ function EventDetailPage() {
             {event.ticketLimit && (
               <div className="flex items-center gap-2 text-zinc-400">
                 <span>🎫</span>
-                <span>剩餘名額：<span className="text-white font-medium">{event.remainingTickets}</span> / {event.ticketLimit}</span>
+                <span>
+                  剩餘名額：
+                  {eligibility ? (
+                    <span className="text-white font-medium">{eligibility.remainingTickets}</span>
+                  ) : (
+                    <span className="text-zinc-500">…</span>
+                  )}
+                  {" / "}{event.ticketLimit}
+                </span>
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import type { Event } from "../types"
-import { getStatusConfig, getCategoryEmoji, isLowTicket, isFull } from "../utils/eventStatus"
+import { getStatusConfig, getCategoryEmoji } from "../utils/eventStatus"
 
 interface Props {
   event: Event
@@ -10,8 +10,6 @@ function EventCard({ event, onClick }: Props) {
   const isActive = event.status === "registering"
   const config = getStatusConfig(event.status)
   const emoji = getCategoryEmoji(event.category)
-  const lowTicket = isLowTicket(event)
-  const full = isFull(event)
 
   return (
     <div
@@ -59,16 +57,9 @@ function EventCard({ event, onClick }: Props) {
           >
             {config.label}
           </span>
-          {full && (
-            <span className="text-xs font-medium px-3 py-1 rounded-full bg-yellow-900/30 text-yellow-400">
-              已額滿
-            </span>
-          )}
-          {event.ticketLimit && !full && (
+          {event.ticketLimit && (
             <span className="text-xs text-zinc-500">
-              剩餘 <span className={`font-medium ${lowTicket ? "text-red-400" : "text-white"}`}>
-                {event.remainingTickets}
-              </span> 位
+              名額 <span className="text-white font-medium">{event.ticketLimit}</span> 人
             </span>
           )}
         </div>

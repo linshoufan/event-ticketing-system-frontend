@@ -38,16 +38,6 @@ const all = [registering1, registering2, waitlistEv, endedEv]
 describe("sortEvents", () => {
   beforeEach(() => localStorage.clear())
 
-  it("tickets_asc：只留報名中，依剩餘票數由少到多", () => {
-    const r = sortEvents(all, "tickets_asc")
-    expect(r.map(e => e.eventId)).toEqual(["a", "b"])
-  })
-
-  it("tickets_desc：只留報名中，依剩餘票數由多到少", () => {
-    const r = sortEvents(all, "tickets_desc")
-    expect(r.map(e => e.eventId)).toEqual(["b", "a"])
-  })
-
   it("status_registering：只留報名中", () => {
     const r = sortEvents(all, "status_registering")
     expect(r.map(e => e.eventId).sort()).toEqual(["a", "b"])
@@ -55,11 +45,6 @@ describe("sortEvents", () => {
 
   it("status_waitlist：只留候補", () => {
     const r = sortEvents(all, "status_waitlist")
-    expect(r.map(e => e.eventId)).toEqual(["c"])
-  })
-
-  it("status_full：只留剩 0 且為報名中或候補的活動（ended 不算）", () => {
-    const r = sortEvents(all, "status_full")
     expect(r.map(e => e.eventId)).toEqual(["c"])
   })
 
@@ -83,7 +68,7 @@ describe("sortEvents", () => {
 
   it("不會改動原始陣列（純函式）", () => {
     const snapshot = all.map(e => e.eventId)
-    sortEvents(all, "tickets_asc")
+    sortEvents(all, "status_registering")
     expect(all.map(e => e.eventId)).toEqual(snapshot)
   })
 })

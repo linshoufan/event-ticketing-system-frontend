@@ -21,9 +21,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   popular:            "最熱門",
   status_registering: "報名中",
   status_waitlist:    "候補中",
-  status_full:        "已額滿",
-  tickets_asc:        "剩餘名額最少",
-  tickets_desc:       "剩餘名額最多",
 }
 
 function EventListPage() {
