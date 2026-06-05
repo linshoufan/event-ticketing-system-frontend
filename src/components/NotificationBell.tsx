@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from "../api/notifications"
 import type { Notification } from "../types"
@@ -23,7 +24,9 @@ function timeAgo(dateStr: string): string {
 
 function NotificationBell() {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
 
   const { data } = useQuery({
@@ -36,9 +39,24 @@ function NotificationBell() {
   const notifications: Notification[] = data?.data ?? []
   const unreadCount = notifications.filter(n => !n.read).length
 
+  // 開啟時計算位置（相對於視窗）
+  useEffect(() => {
+    if (open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      })
+    }
+  }, [open])
+
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (
+        buttonRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node)
+      ) return
+      setOpen(false)
     }
     if (open) document.addEventListener("mousedown", onClickOutside)
     return () => document.removeEventListener("mousedown", onClickOutside)
@@ -64,12 +82,11 @@ function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={ref}>
-
-      {/* 鈴鐺按鈕 */}
+    <>
       <button
+        ref={buttonRef}
         onClick={() => setOpen(v => !v)}
-        className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center justify-center text-sm"
+        className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors flex items-center justify-center text-sm flex-shrink-0"
       >
         🔔
         {unreadCount > 0 && (
@@ -79,17 +96,13 @@ function NotificationBell() {
         )}
       </button>
 
-      {/* 下拉面板 */}
-      {open && (
-        <div className={`
-          absolute right-0 top-full mt-2 w-72 sm:w-80
-          bg-zinc-900/95 backdrop-blur-sm
-          border border-zinc-800 rounded-2xl
-          shadow-2xl overflow-hidden z-50
-          transition-all duration-200
-        `}>
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ position: "fixed", top: pos.top, right: pos.right, zIndex: 100 }}
+          className="w-72 sm:w-80 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
+        >
 
-          {/* 標頭 */}
           <div className="flex items-center justify-between px-4 pt-4 pb-3">
             <div className="flex items-center gap-2">
               <span className="text-white font-semibold text-sm">通知</span>
@@ -111,12 +124,11 @@ function NotificationBell() {
 
           <div className="border-t border-zinc-800/60" />
 
-          {/* 通知列表 */}
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2">
                 <span className="text-2xl opacity-40">🔔</span>
-                <span className="text-zinc-600 text-sm">沒有通知</span>
+                <span className="text-zinc-500 text-sm">目前沒有通知</span>
               </div>
             ) : (
               <div>
@@ -126,13 +138,11 @@ function NotificationBell() {
                     <div key={n.notificationId}>
                       <div
                         onClick={() => handleRead(n)}
-                        className="relative flex gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors cursor-pointer group"
+                        className="relative flex gap-3 px-4 py-3 hover:bg-zinc-800/40 transition-colors cursor-pointer"
                       >
-                        {/* 未讀左側色條 */}
                         {!n.read && (
                           <div className={`absolute left-0 top-2.5 bottom-2.5 w-0.5 rounded-r-full ${config.bar}`} />
                         )}
-
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${config.bg} ${config.color}`}>
@@ -145,7 +155,7 @@ function NotificationBell() {
                           <p className={`text-xs leading-snug ${!n.read ? "text-white font-medium" : "text-zinc-400"}`}>
                             {n.title}
                           </p>
-                          <p className="text-[11px] text-zinc-600 mt-0.5 line-clamp-2 leading-relaxed">
+                          <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2 leading-relaxed">
                             {n.message}
                           </p>
                         </div>
@@ -159,9 +169,10 @@ function NotificationBell() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }
 
