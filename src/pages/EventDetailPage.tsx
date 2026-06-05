@@ -73,15 +73,31 @@ function EventDetailPage() {
     if (!eventId || registering) return
     setRegistering(true)
     try {
-      await createTransaction({
+      const result = await createTransaction({
         eventId,
         guestCount,
         dietType: dietType ?? "none",
         selfDriving,
         saveAutofill: false,
       })
-      showToast("報名成功！", "success")
-      setAlreadyRegistered(true)
+
+      // ⚠️ 後端可能因為名額剛好被搶完而把你放入候補,要看 status
+      if (result.status === "waitlist") {
+        showToast(
+          `名額已被搶完,已加入候補名單${
+            result.waitlistNumber ? `(第 ${result.waitlistNumber} 號)` : ""
+          }`,
+          "warning"
+        )
+        setWaitlisted(true)
+      } else if (result.status === "confirmed") {
+        showToast("報名成功!", "success")
+        setAlreadyRegistered(true)
+      } else {
+        // 不該發生的狀態
+        showToast("報名狀態異常,請重新整理確認", "error")
+      }
+
       queryClient.invalidateQueries({ queryKey: ["event", eventId] })
       queryClient.invalidateQueries({ queryKey: ["eligibility", eventId] })
       queryClient.invalidateQueries({ queryKey: ["events"] })
@@ -91,13 +107,14 @@ function EventDetailPage() {
         showToast("您已報名此活動", "info")
         setAlreadyRegistered(true)
       } else if (code === "NO_TICKETS") {
-        showToast("差一點！名額剛好在此時售完，已自動為您加入候補名單", "warning")
+        // 後端如果走 409 路線就走這裡(spec 兩種都可能)
+        showToast("差一點!名額剛好在此時售完,已自動為您加入候補名單", "warning")
         setWaitlisted(true)
         refetchEligibility()
       } else if (code === "ACCOUNT_LOCKED") {
-        showToast("帳號已被鎖定，無法報名", "error")
+        showToast("帳號已被鎖定,無法報名", "error")
       } else {
-        showToast(err?.message ?? "報名失敗，請稍後再試", "error")
+        showToast(err?.message ?? "報名失敗,請稍後再試", "error")
       }
     } finally {
       setRegistering(false)
