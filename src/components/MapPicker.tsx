@@ -6,11 +6,11 @@ import iconUrl from "leaflet/dist/images/marker-icon.png"
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png"
 import shadowUrl from "leaflet/dist/images/marker-shadow.png"
 
-// Vite ??? Leaflet ?? marker ?????????????
+// Vite 打包後 Leaflet 預設 marker 路徑會壞掉，需要手動補回來
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
 
-const TAIWAN: [number, number] = [25.0478, 121.5319]
+const TAIWAN: [number, number] = [24.8066, 120.9686]
 
 interface Props {
   lat?: number
@@ -68,8 +68,8 @@ function MapPicker({ lat, lng, onChange }: Props) {
       </div>
       <p className="text-zinc-500 text-xs">
         {hasPosition
-          ? `????${lat.toFixed(6)}, ${lng.toFixed(6)} ? ??? marker ??`
-          : "??????????"}
+          ? `已選取：${lat.toFixed(6)}, ${lng.toFixed(6)} — 可拖曳 marker 微調`
+          : "點擊地圖選取活動位置"}
       </p>
     </div>
   )
