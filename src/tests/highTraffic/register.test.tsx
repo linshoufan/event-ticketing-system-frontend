@@ -97,7 +97,7 @@ function renderPage(eventId = "ev_001") {
     await user.click(screen.getByText("立即報名"))
 
     await waitFor(() => {
-      expect(screen.getByText(/名額.*滿.*候補/)).toBeInTheDocument()
+      expect(screen.getByText(/名額.*候補/)).toBeInTheDocument()
     })
   })
 

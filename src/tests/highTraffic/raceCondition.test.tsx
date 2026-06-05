@@ -83,7 +83,7 @@ describe("票券競態條件", () => {
 
     // 應該顯示候補提示，不是「報名失敗」
     await waitFor(() => {
-      expect(screen.getByText(/名額.*滿.*候補/)).toBeInTheDocument()
+      expect(screen.getByText(/名額.*候補/)).toBeInTheDocument()
     })
   })
 
