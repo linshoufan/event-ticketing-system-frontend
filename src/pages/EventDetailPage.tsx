@@ -160,13 +160,20 @@ function EventDetailPage() {
     }
 
     if (event.status === "registering") {
+      const isFull = event.ticketLimit != null && event.remainingTickets === 0
       return (
         <button
           onClick={handleRegister}
           disabled={registering}
-          className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold transition-colors"
+          className={`w-full py-3 rounded-xl disabled:opacity-50 text-white font-semibold transition-colors ${
+            isFull
+              ? "bg-amber-600 hover:bg-amber-500"
+              : "bg-emerald-600 hover:bg-emerald-500"
+          }`}
         >
-          {registering ? "報名中..." : "立即報名"}
+          {registering
+            ? isFull ? "處理中..." : "報名中..."
+            : isFull ? "加入候補" : "立即報名"}
         </button>
       )
     }
