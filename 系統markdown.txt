@@ -1,0 +1,122 @@
+# 企業活動訂票系統 — 專案摘要
+
+> 更新時間：2026-06-06
+
+---
+
+## 系統架構
+
+### 前端
+| 項目 | 技術 |
+|------|------|
+| 框架 | React 19 + TypeScript + Vite |
+| 樣式 | Tailwind CSS v4 |
+| 資料層 | TanStack React Query |
+| 動畫 | Framer Motion |
+| 地圖 | Leaflet / react-leaflet |
+| 測試 | Vitest（單元）+ Playwright（E2E） |
+| 部署 | Vercel |
+
+### 後端（微服務，Google Cloud Run）
+| 服務 | Base URL |
+|------|----------|
+| Account Service | `https://account-api-75541019693.asia-east1.run.app/v1` |
+| Event Service | `https://event-api-75541019693.asia-east1.run.app/v1` |
+| Transaction Service | `https://transaction-api-75541019693.asia-east1.run.app/v1` |
+| Ticket Service | `https://ticket-api-75541019693.asia-east1.run.app/v1` |
+
+### 角色定義
+- `welfare_member`：福委（活動管理、使用者管理）
+- `employee`：一般員工（報名、票券、核銷）
+- `hr`：HR（統計、報名、票券）
+
+---
+
+## 已實現功能
+
+### 認證
+- [x] 員工 / 福委 / HR / 首次登入 四種入口
+- [x] JWT token 儲存與自動登出（30 分鐘）
+- [x] 登入時預載目標頁面 chunk（效能優化）
+
+### 活動
+- [x] 活動列表（搜尋、分類、狀態篩選、排序）
+- [x] 活動詳情頁（報名/候補/已報名/已額滿 狀態切換）
+- [x] 建立活動（含地圖選點、FAQ、表單驗證）
+- [x] 編輯活動（含刪除）
+- [x] 活動額滿時改顯示「加入候補」按鈕（橘色）
+- [x] 搶到最後一張票時顯示黃色 warning toast
+
+### 報名 / 票券
+- [x] 報名、候補、取消報名
+- [x] 我的報名紀錄（MyTransactionsPage）
+- [x] 我的票券（MyTicketsPage）
+- [x] HR 可查看自己的報名與票券（Navbar 新增連結）
+
+### 管理後台（福委）
+- [x] 活動管理（發布草稿、編輯、刪除）
+- [x] 使用者管理（新增、刪除、變更角色、解鎖）
+- [x] 核銷頁面（掃碼核銷）
+- [x] 鎖定 / 解鎖帳號 UI（待後端提供 lock 端點）
+
+### HR
+- [x] HR 統計報表頁（HRDashboardPage）
+
+### 工具函式（util 層）
+- [x] `eventStatus.ts`：狀態設定、分類 emoji、額滿/低票判斷
+- [x] `sortEvents.ts`：活動排序
+- [x] `cancellation.ts`：取消資格判斷
+- [x] `validateEventForm.ts`：活動表單驗證
+- [x] `roles.ts`：角色權限工具
+- [x] `eligibility.ts`：報名資格判斷
+- [x] `ticketStatus.ts`：票券狀態設定
+- [x] `diet.ts`：飲食類型工具
+
+### 測試
+- [x] 單元測試：160 個（utils 全覆蓋）
+- [x] E2E 測試：登入、報名、核銷、HR、race condition
+- [x] Race condition 測試（`ticketRace.spec.ts`）：同時搶最後一張票
+
+---
+
+## 已知問題（後端需修正）
+
+| 問題 | 說明 |
+|------|------|
+| `remainingTickets` 未正確遞減 | 報名成功後票數沒扣，導致前端顯示「已額滿」但仍可報名 |
+| Race condition | 兩人同時搶票，後端可能發出兩張 confirmed 票 |
+| 孤兒票券（Unknown Event） | 刪除活動時未 cascade 刪除票券，導致票券頁出現 Unknown Event |
+| 缺少 `PATCH /users/{userId}/lock` | 只有 unlock，沒有 lock，福委無法手動鎖定帳號 |
+| `cancellationDeadline` 未回傳 | Transaction API 沒有帶此欄位，前端取消截止判斷失效 |
+| HR 票券 API 權限 | `GET /tickets`、`POST /transactions` 只允許 employee，HR 被擋 |
+
+---
+
+## 接下來要做的任務
+
+### 後端
+- [ ] `PATCH /users/{userId}/lock`：手動鎖定帳號（對應前端 UserManagePage 鎖定按鈕）
+- [ ] `POST /events/{eventId}/lock-no-shows`：活動結束後批次鎖定未出席者
+- [ ] 修正 `remainingTickets` 扣減邏輯（atomic update）
+- [ ] 修正 race condition（row-level lock 或 atomic decrement）
+- [ ] Cascade delete：刪活動時同步刪票券與報名紀錄
+- [ ] 開放 HR 角色存取 `GET /tickets`、`POST /transactions`
+- [ ] Transaction API 回傳 `cancellationDeadline` 欄位
+- [ ] 實作 Notification Service（`GET /notifications`、`PATCH /notifications/{id}`）
+
+### 前端
+- [ ] 移除通知功能（進行中，等後端 Notification Service 完成後再串接）
+- [ ] 完成 UserManagePage 鎖定按鈕（串接 `PATCH /users/{userId}/lock`）
+- [ ] CheckinPage 加「鎖定未出席者」按鈕（串接 `POST /events/{eventId}/lock-no-shows`）
+- [ ] 修正 Hr.spec.ts E2E 測試文字對應問題
+- [ ] 定期清理 Race condition 測試留下的 `[自動測試]` 活動
+
+---
+
+## 測試帳號
+
+| 角色 | 員工編號 | 密碼 |
+|------|----------|------|
+| welfare_member | welfare_001 | password123 |
+| employee | 1000001 | password123 |
+| employee | 1000002 | password123 |

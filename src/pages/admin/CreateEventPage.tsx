@@ -1,9 +1,14 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { createEvent } from "../../api/events"
 import PageTransition from "../../components/PageTransition"
 import { validateEventForm } from "../../utils/validateEventForm"
 import MapPicker from "../../components/MapPicker"
+
+function toDatetimeLocal(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
 
 const CATEGORIES = [
   { value: "sport", label: "運動" },
@@ -25,6 +30,7 @@ function CreateEventPage() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState("")
   const [faqs, setFaqs] = useState<FAQ[]>([])
+  const [registrationDays, setRegistrationDays] = useState("")
 
   const [form, setForm] = useState({
     name: "",
@@ -36,12 +42,20 @@ function CreateEventPage() {
     checkinRadiusMeters: "200",
     eventStartTime: "",
     eventEndTime: "",
-    registrationStart: "",
+    registrationStart: toDatetimeLocal(new Date()),
     registrationEnd: "",
     ticketLimit: "",
     cancellationDeadline: "",
     isDraft: true,
   })
+
+  // 自動計算報名截止時間
+  useEffect(() => {
+    if (!form.registrationStart || !registrationDays || Number(registrationDays) <= 0) return
+    const start = new Date(form.registrationStart)
+    const end = new Date(start.getTime() + Number(registrationDays) * 24 * 60 * 60 * 1000)
+    setForm(prev => ({ ...prev, registrationEnd: toDatetimeLocal(end) }))
+  }, [form.registrationStart, registrationDays])
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -65,6 +79,11 @@ function CreateEventPage() {
   }
 
   async function handleSubmit(isDraft: boolean) {
+    if (!registrationDays || Number(registrationDays) <= 0) {
+      setMessage("請輸入報名開放天數")
+      return
+    }
+
     const error = validateEventForm(form)
     if (error) {
       setMessage(error)
@@ -177,8 +196,24 @@ function CreateEventPage() {
               <input type="datetime-local" name="registrationStart" value={form.registrationStart} onChange={handleChange} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>報名截止時間</label>
-              <input type="datetime-local" name="registrationEnd" value={form.registrationEnd} onChange={handleChange} className={inputClass} />
+              <label className={labelClass}>報名開放天數 *</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={registrationDays}
+                  onChange={e => setRegistrationDays(e.target.value)}
+                  placeholder="7"
+                  className={inputClass}
+                />
+                <span className="text-zinc-500 text-sm whitespace-nowrap flex-shrink-0">天</span>
+              </div>
+              {form.registrationEnd && (
+                <p className="text-zinc-500 text-xs mt-1.5">
+                  截止：{new Date(form.registrationEnd).toLocaleString("zh-TW")}
+                </p>
+              )}
             </div>
           </div>
         </div>
