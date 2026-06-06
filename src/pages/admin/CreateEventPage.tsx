@@ -103,17 +103,15 @@ function CreateEventPage() {
   }
 
   async function handleSubmit(isDraft: boolean) {
-    if (!form.registrationEnd) {
-      setMessage("請填入報名截止時間（天數或自訂日期）")
-      return
-    }
-
     const error = validateEventForm(form)
     if (error) {
       setMessage(error)
       return
     }
-
+    if (!form.registrationEnd) {
+      setMessage("請填入報名截止時間（天數或自訂日期）")
+      return
+    }
     setSubmitting(true)
     try {
       await createEvent({

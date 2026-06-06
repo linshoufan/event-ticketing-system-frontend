@@ -54,14 +54,16 @@ test.describe("活動管理", () => {
   })
 
   test("可以刪除活動", async ({ page }) => {
+    await page.waitForLoadState("networkidle")
+    await page.waitForTimeout(800)
+
     const deleteBtn = page.locator("text=刪除").first()
     if (await deleteBtn.count() > 0) {
       const countBefore = await page.locator("text=刪除").count()
       page.on("dialog", dialog => dialog.accept())
       await deleteBtn.click()
-      await page.waitForTimeout(500)
+      await page.waitForTimeout(1500)
       const countAfter = await page.locator("text=刪除").count()
-      // ✅ 改成 LessThanOrEqual，因為部分活動後端不允許刪除（scheduler 問題）
       expect(countAfter).toBeLessThanOrEqual(countBefore)
     }
   })
@@ -135,12 +137,16 @@ test.describe("使用者管理", () => {
   })
 
   test("可以刪除使用者", async ({ page }) => {
+    // 等使用者列表完整渲染後再量
+    await page.waitForLoadState("networkidle")
+    await page.waitForTimeout(800)
+
     const deleteBtn = page.locator("text=刪除").first()
     if (await deleteBtn.count() > 0) {
       const countBefore = await page.locator("text=刪除").count()
       page.on("dialog", dialog => dialog.accept())
       await deleteBtn.click()
-      await page.waitForTimeout(500)
+      await page.waitForTimeout(1500)  // 拉長一點，避免後端還沒回
       const countAfter = await page.locator("text=刪除").count()
       expect(countAfter).toBeLessThanOrEqual(countBefore)
     }

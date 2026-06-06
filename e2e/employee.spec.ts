@@ -30,11 +30,22 @@ test.describe("活動瀏覽", () => {
   })
 
   test("可以搜尋活動", async ({ page }) => {
-    const baseURL = page.url()
-    const keyword = baseURL.includes("localhost") ? "烤肉" : "Family"
-    await page.fill('input[placeholder="搜尋活動..."]', keyword)
-    await page.waitForTimeout(500)
-    await expect(page.locator('[data-testid="event-card"]').first()).toBeVisible({ timeout: 10000 })
+      // 確保列表先載入
+      await expect(
+        page.locator('[data-testid="event-card"]').first()
+      ).toBeVisible({ timeout: 15000 })
+
+      // 從第一張卡片抓兩個中文字，這樣搜尋必然命中至少一筆
+      const firstCardText = (await page.locator('[data-testid="event-card"]').first().textContent()) ?? ""
+      const match = firstCardText.match(/[\u4e00-\u9fa5]{2}/)
+      const keyword = match ? match[0] : "2026"
+
+      await page.fill('input[placeholder="搜尋活動..."]', keyword)
+      await page.waitForTimeout(800)  // debounce 是 400ms，這裡保險一點
+
+      await expect(
+        page.locator('[data-testid="event-card"]').first()
+      ).toBeVisible({ timeout: 10000 })
   })
 
   test("可以依分類篩選", async ({ page }) => {
