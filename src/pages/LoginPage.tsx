@@ -8,7 +8,7 @@ import photo1 from "../assets/photo1.jpg"
 import photo2 from "../assets/photo2.jpg"
 import photo3 from "../assets/photo3.jpg"
 
-const photos = [photo1, photo2, photo3,photo0]
+const photos = [photo1, photo2, photo3, photo0]
 const { useMock } = APP_CONFIG.development
 
 type LoginType = "first" | "employee" | "welfare_member" | "hr"
@@ -44,7 +44,7 @@ const LOGIN_OPTIONS: {
   {
     type: "first",
     label: "第一次登入",
-    sublabel: "使用員工編號建立帳號",
+    sublabel: "使用員工編號建立帳號並設定偏好",
     icon: "✨",
     role: null,
   },
@@ -124,9 +124,21 @@ function LoginPage() {
 
       setLeaving(true)
       setTimeout(() => {
-        if (role === "welfare_member") navigate("/admin/events")
-        else if (role === "hr") navigate("/admin/hr")
-        else navigate("/events")
+        // 第一次登入 → 進 onboarding 設定偏好
+        if (selectedType === "first") {
+          if (role === "welfare_member") {
+            navigate("/welcome")
+          } else {
+            // employee、hr 都去選偏好
+            navigate("/onboarding")
+          }
+        } else if (role === "welfare_member") {
+          navigate("/admin/events")
+        } else if (role === "hr") {
+          navigate("/admin/hr")
+        } else {
+          navigate("/events")
+        }
       }, 500)
     } catch (err: any) {
       const code = err?.code
@@ -180,7 +192,6 @@ function LoginPage() {
             animating ? "opacity-0 translate-y-3" : "opacity-100 translate-y-0"
           }`}>
 
-            {/* 選擇登入類型 */}
             {!selectedType && (
               <div className="flex flex-col gap-3">
                 {LOGIN_OPTIONS.map(option => (
@@ -199,7 +210,6 @@ function LoginPage() {
               </div>
             )}
 
-            {/* 登入表單 */}
             {selectedType && selectedOption && (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="flex items-center gap-3 mb-2">
