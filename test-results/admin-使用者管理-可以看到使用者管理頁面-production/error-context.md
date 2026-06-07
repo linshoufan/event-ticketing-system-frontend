@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: admin.spec.ts >> 報名詳情 >> 可以依狀態篩選報名
-- Location: e2e\admin.spec.ts:104:3
+- Name: admin.spec.ts >> 使用者管理 >> 可以看到使用者管理頁面
+- Location: e2e\admin.spec.ts:117:3
 
 # Error details
 

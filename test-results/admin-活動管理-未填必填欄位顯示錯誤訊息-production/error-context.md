@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: admin.spec.ts >> 報名詳情 >> 可以依狀態篩選報名
-- Location: e2e\admin.spec.ts:104:3
+- Name: admin.spec.ts >> 活動管理 >> 未填必填欄位顯示錯誤訊息
+- Location: e2e\admin.spec.ts:41:3
 
 # Error details
 

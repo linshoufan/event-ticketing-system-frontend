@@ -53,10 +53,10 @@ describe("validateEventForm", () => {
     }))).toBe("報名截止時間必須晚於報名開始時間")
   })
 
-  it("報名截止晚於活動開始 → 錯誤", () => {
+  it("報名截止晚於活動結束 → 錯誤", () => {
     expect(validateEventForm(makeForm({
       registrationEnd: "2026-07-25T00:00",
-    }))).toBe("報名截止時間不能晚於活動開始時間")
+    }))).toBe("報名截止時間不能晚於活動結束時間")
   })
 
   it("取消截止晚於活動開始 → 錯誤", () => {

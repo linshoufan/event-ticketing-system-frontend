@@ -25,10 +25,10 @@ export function validateEventForm(form: EventFormInput): string | null {
     return "報名截止時間必須晚於報名開始時間"
   }
   if (
-    form.registrationEnd && form.eventStartTime &&
-    new Date(form.registrationEnd) > new Date(form.eventStartTime)
+    form.registrationEnd && form.eventEndTime &&
+    new Date(form.registrationEnd) > new Date(form.eventEndTime)
   ) {
-    return "報名截止時間不能晚於活動開始時間"
+    return "報名截止時間不能晚於活動結束時間"
   }
   if (
     form.cancellationDeadline && form.eventStartTime &&

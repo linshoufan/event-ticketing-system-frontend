@@ -7,7 +7,7 @@
 # Test info
 
 - Name: Ticketrace.spec.ts >> 搶最後一張票 (Race Condition) >> 兩人同時報名，應該只有一人正取
-- Location: e2e\Ticketrace.spec.ts:95:3
+- Location: e2e\Ticketrace.spec.ts:93:3
 
 # Error details
 
@@ -20,9 +20,9 @@ Error: 登入失敗 welfare_001: {"error":{"code":"INVALID_ROLE","message":"Role
 ```ts
   1   | import { test, expect } from "@playwright/test"
   2   | 
-  3   | const ACCOUNT_API = "https://account-api-75541019693.asia-east1.run.app/v1"
-  4   | const EVENT_API   = "https://event-api-75541019693.asia-east1.run.app/v1"
-  5   | const TX_API      = "https://transaction-api-75541019693.asia-east1.run.app/v1"
+  3   | const ACCOUNT_API = "https://cnticketsystem.xyz/account/v1"
+  4   | const EVENT_API   = "https://cnticketsystem.xyz/event/v1"
+  5   | const TX_API      = "https://cnticketsystem.xyz/transaction/v1"
   6   | 
   7   | const WELFARE = { employeeId: "welfare_001", password: "password123", role: "welfare_member" }
   8   | const USER1   = { employeeId: "1000001",    password: "password123", role: "employee" }
@@ -84,9 +84,9 @@ Error: 登入失敗 welfare_001: {"error":{"code":"INVALID_ROLE","message":"Role
   63  |         checkinRadiusMeters: 200,
   64  |         eventStartTime: new Date(now + 7 * 86400000).toISOString(),
   65  |         eventEndTime: new Date(now + 7 * 86400000 + 3600000).toISOString(),
-  66  |         registrationStart: new Date(now - 60000).toISOString(),    // 報名已開放
+  66  |         registrationStart: new Date(now - 60000).toISOString(),
   67  |         registrationEnd: new Date(now + 6 * 86400000).toISOString(),
-  68  |         ticketLimit: 1,                                            // 只有一張票
+  68  |         ticketLimit: 1,
   69  |         isDraft: false,
   70  |       }),
   71  |     })
@@ -97,44 +97,44 @@ Error: 登入失敗 welfare_001: {"error":{"code":"INVALID_ROLE","message":"Role
   76  |   })
   77  | 
   78  |   test.afterAll(async () => {
-  79  |     // 用各自的 token 取消報名（DELETE /transactions 限本人）
-  80  |     for (const { id, token } of createdTx) {
-  81  |       await fetch(`${TX_API}/transactions/${id}`, {
-  82  |         method: "DELETE",
-  83  |         headers: { Authorization: `Bearer ${token}` },
-  84  |       }).catch(() => {})
-  85  |     }
-  86  |     // 嘗試刪除測試活動（報名已開始可能回 409，忽略）
-  87  |     if (eventId) {
-  88  |       await fetch(`${EVENT_API}/events/${eventId}`, {
-  89  |         method: "DELETE",
-  90  |         headers: { Authorization: `Bearer ${welfareToken}` },
-  91  |       }).catch(() => {})
-  92  |     }
-  93  |   })
-  94  | 
-  95  |   test("兩人同時報名，應該只有一人正取", async () => {
-  96  |     const [token1, token2] = await Promise.all([login(USER1), login(USER2)])
-  97  | 
-  98  |     // 同時送出兩筆報名請求
-  99  |     const [r1, r2] = await Promise.all([
-  100 |       register(token1, eventId),
-  101 |       register(token2, eventId),
-  102 |     ])
+  79  |     for (const { id, token } of createdTx) {
+  80  |       await fetch(`${TX_API}/transactions/${id}`, {
+  81  |         method: "DELETE",
+  82  |         headers: { Authorization: `Bearer ${token}` },
+  83  |       }).catch(() => {})
+  84  |     }
+  85  |     if (eventId) {
+  86  |       await fetch(`${EVENT_API}/events/${eventId}`, {
+  87  |         method: "DELETE",
+  88  |         headers: { Authorization: `Bearer ${welfareToken}` },
+  89  |       }).catch(() => {})
+  90  |     }
+  91  |   })
+  92  | 
+  93  |   test("兩人同時報名，應該只有一人正取", async () => {
+  94  |     const [token1, token2] = await Promise.all([login(USER1), login(USER2)])
+  95  | 
+  96  |     const [r1, r2] = await Promise.all([
+  97  |       register(token1, eventId),
+  98  |       register(token2, eventId),
+  99  |     ])
+  100 | 
+  101 |     console.log("User1:", r1.httpStatus, JSON.stringify(r1.body))
+  102 |     console.log("User2:", r2.httpStatus, JSON.stringify(r2.body))
   103 | 
-  104 |     console.log("User1:", r1.httpStatus, JSON.stringify(r1.body))
-  105 |     console.log("User2:", r2.httpStatus, JSON.stringify(r2.body))
+  104 |     if (r1.body.data?.transactionId) createdTx.push({ id: r1.body.data.transactionId, token: token1 })
+  105 |     if (r2.body.data?.transactionId) createdTx.push({ id: r2.body.data.transactionId, token: token2 })
   106 | 
-  107 |     // 記錄 transaction 供清理
-  108 |     if (r1.body.data?.transactionId) createdTx.push({ id: r1.body.data.transactionId, token: token1 })
-  109 |     if (r2.body.data?.transactionId) createdTx.push({ id: r2.body.data.transactionId, token: token2 })
-  110 | 
-  111 |     // 分類每個結果
-  112 |     function classify(r: { httpStatus: number; body: any }): string {
-  113 |       if (r.httpStatus === 201) return r.body.data?.status   // "confirmed" | "waitlist"
-  114 |       if (r.httpStatus === 409) return "rejected"            // NO_TICKETS / ALREADY_REGISTERED
-  115 |       return `error_${r.httpStatus}`
-  116 |     }
-  117 | 
-  118 |     const results = [classify(r1), classify(r2)]
+  107 |     function classify(r: { httpStatus: number; body: any }): string {
+  108 |       if (r.httpStatus === 201) return r.body.data?.status
+  109 |       if (r.httpStatus === 409) return "rejected"
+  110 |       return `error_${r.httpStatus}`
+  111 |     }
+  112 | 
+  113 |     const results = [classify(r1), classify(r2)]
+  114 |     console.log("分類結果:", results)
+  115 | 
+  116 |     const confirmed = results.filter(s => s === "confirmed").length
+  117 |     const waitlistOrRejected = results.filter(s => s === "waitlist" || s === "rejected").length
+  118 | 
 ```

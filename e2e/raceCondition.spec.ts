@@ -3,10 +3,10 @@ import { test, expect } from "@playwright/test"
 // ═══════════════════════════════════════════════════════════════
 //  API 端點
 // ═══════════════════════════════════════════════════════════════
-const ACCOUNT_API = "https://account-api-75541019693.asia-east1.run.app/v1"
-const EVENT_API   = "https://event-api-75541019693.asia-east1.run.app/v1"
-const TX_API      = "https://transaction-api-75541019693.asia-east1.run.app/v1"
-const TICKET_API  = "https://ticket-api-75541019693.asia-east1.run.app/v1"
+const ACCOUNT_API = "cnticketsystem.xyz/account/v1"
+const EVENT_API   = "cnticketsystem.xyz/event/v1"
+const TX_API      = "cnticketsystem.xyz/transaction/v1"
+const TICKET_API  = "cnticketsystem.xyz/ticket/v1"
 
 // ═══════════════════════════════════════════════════════════════
 //  測試帳號

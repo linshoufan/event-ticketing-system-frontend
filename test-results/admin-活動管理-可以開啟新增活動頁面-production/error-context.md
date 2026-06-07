@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: admin.spec.ts >> 報名詳情 >> 可以依狀態篩選報名
-- Location: e2e\admin.spec.ts:104:3
+- Name: admin.spec.ts >> 活動管理 >> 可以開啟新增活動頁面
+- Location: e2e\admin.spec.ts:30:3
 
 # Error details
 

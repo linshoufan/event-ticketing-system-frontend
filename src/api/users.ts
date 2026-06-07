@@ -49,7 +49,7 @@ export async function getUserById(userId: string): Promise<User> {
     return delay(user as User)
   }
 
-  const res = await fetch(`${BASE_URL}/users/${userId}`, { headers: getAuthHeaders() })
+  const res = await fetchWithRetry(`${BASE_URL}/users/${userId}`, { headers: getAuthHeaders() })
   const json = await res.json()
   return json.data
 }
@@ -80,7 +80,7 @@ export async function updateUserRole(userId: string, role: string) {
     return delay({ updated: true, updatedAt: new Date().toISOString() }, mockActionDelayMs)
   }
 
-  const res = await fetch(`${BASE_URL}/users/${userId}/role`, {
+  const res = await fetchWithRetry(`${BASE_URL}/users/${userId}/role`, {
     method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify({ role }),

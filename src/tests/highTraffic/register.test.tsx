@@ -69,7 +69,7 @@ function renderPage(eventId = "ev_001") {
     )
 
     renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
+    await screen.findByText("立即報名")
 
     const button = screen.getByText("立即報名")
 
@@ -92,7 +92,7 @@ function renderPage(eventId = "ev_001") {
       .mockResolvedValueOnce({ eligible: true, reason: null, remainingTickets: 0, isWaitlist: true })
 
     renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
+    await screen.findByText("立即報名")
 
     await user.click(screen.getByText("立即報名"))
 
@@ -106,7 +106,7 @@ function renderPage(eventId = "ev_001") {
     vi.mocked(createTransaction).mockRejectedValue({ code: "ACCOUNT_LOCKED" })
 
     renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
+    await screen.findByText("立即報名")
 
     await user.click(screen.getByText("立即報名"))
 
@@ -120,7 +120,7 @@ function renderPage(eventId = "ev_001") {
     vi.mocked(createTransaction).mockRejectedValue({ code: "ALREADY_REGISTERED" })
 
     renderPage()
-    await waitFor(() => screen.getByText("立即報名"))
+    await screen.findByText("立即報名")
 
     await user.click(screen.getByText("立即報名"))
 
