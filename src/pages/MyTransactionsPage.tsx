@@ -7,7 +7,8 @@ import { TransactionCardSkeleton } from "../components/Skeleton"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
 import { getDietLabel } from "../utils/diet"
-import { canCancel } from "../utils/cancellation"
+import { isOrphanRecord } from "../utils/orphan"
+
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
 const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; bg: string; dot: string }> = {
@@ -16,15 +17,21 @@ const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; b
   cancelled: { label: "已取消", color: "text-zinc-500",    bg: "bg-zinc-800",       dot: "bg-zinc-600" },
 }
 
-
-
 // 判斷是否可以取消：未超過取消截止時間，且活動還沒開始
-function getDeadlineText(t: Transaction): string | null {
-  if (!t.cancellationDeadline) return null
-  const isPast = new Date(t.cancellationDeadline) <= new Date()
-  return `取消截止：${new Date(t.cancellationDeadline).toLocaleString("zh-TW")}${isPast ? "（已超過）" : ""}`
+function canCancel(t: Transaction): boolean {
+  if (t.status !== "confirmed") return false
+  const now = new Date()
+  const deadline = (t as any).cancellationDeadline
+  if (deadline) return new Date(deadline) > now
+  return new Date(t.eventStartTime) > now
 }
 
+function getDeadlineText(t: Transaction): string | null {
+  const deadline = (t as any).cancellationDeadline
+  if (!deadline) return null
+  const isPast = new Date(deadline) <= new Date()
+  return `取消截止：${new Date(deadline).toLocaleString("zh-TW")}${isPast ? "（已超過）" : ""}`
+}
 
 function MyTransactionsPage() {
   const navigate = useNavigate()
@@ -65,6 +72,10 @@ function MyTransactionsPage() {
     }
   }
 
+  // 濾掉孤兒紀錄（原活動已被後端刪除）
+  const visible = transactions.filter(t => !isOrphanRecord(t.eventName))
+  const orphanCount = transactions.length - visible.length
+
   return (
     <PageTransition>
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -86,86 +97,98 @@ function MyTransactionsPage() {
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map(i => <TransactionCardSkeleton key={i} />)}
           </div>
-        ) : transactions.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className="text-center py-16 text-zinc-500">
             <p className="text-4xl mb-3">📋</p>
             <p>沒有報名紀錄</p>
+            {orphanCount > 0 && (
+              <p className="text-xs mt-3 text-zinc-600">
+                （已隱藏 {orphanCount} 筆紀錄，原活動已被刪除）
+              </p>
+            )}
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {transactions.map(t => {
-              const config = STATUS_CONFIG[t.status as TransactionStatus]
-              const cancellable = canCancel(t)
-              const deadlineText = getDeadlineText(t)
-              return (
-                <div
-                  key={t.transactionId}
-                  className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-5 transition-all ${t.status === "cancelled" ? "opacity-50" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
-                      <h2 className="text-white font-semibold">{t.eventName}</h2>
+          <>
+            {orphanCount > 0 && (
+              <p className="text-xs text-zinc-600 mb-3 text-center">
+                ⓘ 已隱藏 {orphanCount} 筆紀錄（原活動已被刪除）
+              </p>
+            )}
+            <div className="flex flex-col gap-3">
+              {visible.map(t => {
+                const config = STATUS_CONFIG[t.status as TransactionStatus]
+                const cancellable = canCancel(t)
+                const deadlineText = getDeadlineText(t)
+                return (
+                  <div
+                    key={t.transactionId}
+                    className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-5 transition-all ${t.status === "cancelled" ? "opacity-50" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />
+                        <h2 className="text-white font-semibold">{t.eventName}</h2>
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <span className={`text-xs font-medium px-3 py-1 rounded-full ${config.bg} ${config.color}`}>
+                          {config.label}
+                          {t.status === "waitlist" && t.waitlistNumber && (
+                            <span className="ml-1">（第 {t.waitlistNumber} 號）</span>
+                          )}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex-shrink-0 text-right">
-                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${config.bg} ${config.color}`}>
-                        {config.label}
-                        {t.status === "waitlist" && t.waitlistNumber && (
-                          <span className="ml-1">（第 {t.waitlistNumber} 號）</span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
 
-                  <p className="text-zinc-400 text-sm flex items-center gap-1 mb-3">
-                    <span>🕐</span>
-                    {new Date(t.eventStartTime).toLocaleString("zh-TW")}
-                  </p>
-
-                  <div className="flex gap-4 text-sm text-zinc-500 mb-3">
-                    <span>飲食：{getDietLabel(t.dietType)}</span>
-                    <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
-                    {t.guestCount > 0 && <span>家屬：{t.guestCount} 人</span>}
-                  </div>
-
-                  {t.status === "confirmed" && deadlineText && (
-                    <p className={`text-xs mb-3 ${cancellable ? "text-zinc-500" : "text-red-400"}`}>
-                      {deadlineText}
+                    <p className="text-zinc-400 text-sm flex items-center gap-1 mb-3">
+                      <span>🕐</span>
+                      {new Date(t.eventStartTime).toLocaleString("zh-TW")}
                     </p>
-                  )}
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-zinc-600 text-xs">
-                      報名於 {new Date(t.registeredAt).toLocaleString("zh-TW")}
-                    </span>
-                    <div className="flex gap-2">
-                      {t.ticketId && (
-                        <button
-                          onClick={() => navigate(`/my-tickets/${t.ticketId}`)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-                        >
-                          查看票券
-                        </button>
-                      )}
-                      {t.status === "confirmed" && (
-                        <button
-                          onClick={() => cancellable && handleCancel(t.transactionId)}
-                          disabled={!cancellable}
-                          className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                            cancellable
-                              ? "bg-red-900/30 hover:bg-red-900/50 text-red-400"
-                              : "bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-50"
-                          }`}
-                        >
-                          {cancellable ? "取消報名" : "無法取消"}
-                        </button>
-                      )}
+                    <div className="flex gap-4 text-sm text-zinc-500 mb-3">
+                      <span>飲食：{getDietLabel(t.dietType)}</span>
+                      <span>自行開車：{t.selfDriving ? "是" : "否"}</span>
+                      {t.guestCount > 0 && <span>家屬：{t.guestCount} 人</span>}
+                    </div>
+
+                    {t.status === "confirmed" && deadlineText && (
+                      <p className={`text-xs mb-3 ${cancellable ? "text-zinc-500" : "text-red-400"}`}>
+                        {deadlineText}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-600 text-xs">
+                        報名於 {new Date(t.registeredAt).toLocaleString("zh-TW")}
+                      </span>
+                      <div className="flex gap-2">
+                        {t.ticketId && (
+                          <button
+                            onClick={() => navigate(`/my-tickets/${t.ticketId}`)}
+                            className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                          >
+                            查看票券
+                          </button>
+                        )}
+                        {t.status === "confirmed" && (
+                          <button
+                            onClick={() => cancellable && handleCancel(t.transactionId)}
+                            disabled={!cancellable}
+                            className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                              cancellable
+                                ? "bg-red-900/30 hover:bg-red-900/50 text-red-400"
+                                : "bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-50"
+                            }`}
+                          >
+                            {cancellable ? "取消報名" : "無法取消"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
       <Toast message={toast.message} type={toast.type} visible={toast.visible} />
