@@ -1,5 +1,6 @@
 import type { User } from "../types"
 import { APP_CONFIG } from "../config/app.config"
+import { fetchWithRetry } from "./fetchWithRetry"
 const BASE_URL = APP_CONFIG.api.accountUrl
 const { useMock, mockDelayMs } = APP_CONFIG.development
 
@@ -93,7 +94,7 @@ export async function getMe(signal?: AbortSignal): Promise<User> {
       })
     })
   }
-  const res = await fetch(`${BASE_URL}/me`, {
+  const res = await fetchWithRetry(`${BASE_URL}/me`, {
     headers: getAuthHeaders(),
     signal,
   })

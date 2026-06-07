@@ -1,7 +1,7 @@
 ﻿import type { Event, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
 import { APP_CONFIG } from "../config/app.config"
-
+import { fetchWithRetry } from "./fetchWithRetry"
 const BASE_URL = APP_CONFIG.api.eventUrl
 const { useMock, mockDelayMs } = APP_CONFIG.development
 
@@ -62,7 +62,7 @@ export async function getEvents(
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => [k, String(v)])
   )
-  const res = await fetch(`${BASE_URL}/events?${query}`, { headers: getAuthHeaders(), signal })
+  const res = await fetchWithRetry(`${BASE_URL}/events?${query}`, { headers: getAuthHeaders(), signal })
   const json = await handleResponse(res)
 
   let events: Event[] = []
@@ -96,7 +96,7 @@ export async function getEventById(eventId: string, signal?: AbortSignal): Promi
     return delay(event, mockDelayMs, signal)
   }
 
-  const res = await fetch(`${BASE_URL}/events/${eventId}`, { headers: getAuthHeaders(), signal })
+  const res = await fetchWithRetry(`${BASE_URL}/events/${eventId}`, { headers: getAuthHeaders(), signal })
   const json = await handleResponse(res)
   if (!json.data) throw { code: "EVENT_NOT_FOUND", message: "Event not found" }
   return json.data

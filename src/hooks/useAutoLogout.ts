@@ -1,5 +1,6 @@
+// src/hooks/useAutoLogout.ts
 import { useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { removeToken } from "../api/auth"
 import { APP_CONFIG } from "../config/app.config"
 
@@ -22,10 +23,18 @@ export function isTokenExpired(): boolean {
 
 export function useAutoLogout() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     const token = localStorage.getItem(tokenKey)
     if (!token) return
+
+    function handleLogout() {
+      removeToken()
+      localStorage.removeItem(roleKey)
+      clearLoginTime()
+      navigate("/", { replace: true })
+    }
 
     if (isTokenExpired()) {
       handleLogout()
@@ -36,18 +45,7 @@ export function useAutoLogout() {
     if (!expiry) return
 
     const remaining = Number(expiry) - Date.now()
-
-    const timer = setTimeout(() => {
-      handleLogout()
-    }, remaining)
-
+    const timer = setTimeout(handleLogout, remaining)
     return () => clearTimeout(timer)
-
-    function handleLogout() {
-      removeToken()
-      localStorage.removeItem(roleKey)
-      clearLoginTime()
-      navigate("/", { replace: true })
-    }
-  }, [navigate])
+  }, [navigate, location.pathname])
 }

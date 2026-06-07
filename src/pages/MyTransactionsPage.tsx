@@ -7,6 +7,7 @@ import { TransactionCardSkeleton } from "../components/Skeleton"
 import Toast from "../components/Toast"
 import { useToast } from "../hooks/useToast"
 import { getDietLabel } from "../utils/diet"
+import { canCancel } from "../utils/cancellation"
 type TransactionStatus = "confirmed" | "waitlist" | "cancelled"
 
 const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; bg: string; dot: string }> = {
@@ -18,20 +19,12 @@ const STATUS_CONFIG: Record<TransactionStatus, { label: string; color: string; b
 
 
 // 判斷是否可以取消：未超過取消截止時間，且活動還沒開始
-function canCancel(t: Transaction): boolean {
-  if (t.status !== "confirmed") return false
-  const now = new Date()
-  const deadline = (t as any).cancellationDeadline
-  if (deadline) return new Date(deadline) > now
-  return new Date(t.eventStartTime) > now
+function getDeadlineText(t: Transaction): string | null {
+  if (!t.cancellationDeadline) return null
+  const isPast = new Date(t.cancellationDeadline) <= new Date()
+  return `取消截止：${new Date(t.cancellationDeadline).toLocaleString("zh-TW")}${isPast ? "（已超過）" : ""}`
 }
 
-function getDeadlineText(t: Transaction): string | null {
-  const deadline = (t as any).cancellationDeadline
-  if (!deadline) return null
-  const isPast = new Date(deadline) <= new Date()
-  return `取消截止：${new Date(deadline).toLocaleString("zh-TW")}${isPast ? "（已超過）" : ""}`
-}
 
 function MyTransactionsPage() {
   const navigate = useNavigate()

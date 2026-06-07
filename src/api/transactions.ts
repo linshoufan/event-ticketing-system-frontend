@@ -1,6 +1,7 @@
 import type { Transaction, PaginatedResponse } from "../types"
 import { getAuthHeaders } from "./auth"
 import { APP_CONFIG } from "../config/app.config"
+import { fetchWithRetry } from "./fetchWithRetry"
 
 const BASE_URL = APP_CONFIG.api.txUrl
 const { useMock, mockDelayMs, mockActionDelayMs } = APP_CONFIG.development
@@ -48,7 +49,7 @@ export async function getEventRegistrations(
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => [k, String(v)])
   )
-  const res = await fetch(`${BASE_URL}/events/${eventId}/registrations?${query}`, {
+const res = await fetchWithRetry(`${BASE_URL}/events/${eventId}/registrations?${query}`, {
     headers: getAuthHeaders(),
     signal,
   })
@@ -76,7 +77,7 @@ export async function getTransactions(
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => [k, String(v)])
   )
-  const res = await fetch(`${BASE_URL}/transactions?${query}`, { headers: getAuthHeaders(), signal })
+  const res = await fetchWithRetry(`${BASE_URL}/transactions?${query}`, { headers: getAuthHeaders(), signal })
   return res.json()
 }
 

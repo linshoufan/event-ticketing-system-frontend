@@ -1,6 +1,7 @@
 import type { Ticket } from "../types"
 import { getAuthHeaders } from "./auth"
 import { APP_CONFIG } from "../config/app.config"
+import { fetchWithRetry } from "./fetchWithRetry"
 
 const BASE_URL = APP_CONFIG.api.ticketUrl
 const { useMock, mockDelayMs, mockActionDelayMs } = APP_CONFIG.development
@@ -36,7 +37,7 @@ export async function getTickets(
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => [k, String(v)])
   )
-  const res = await fetch(`${BASE_URL}/tickets?${query}`, { headers: getAuthHeaders(), signal })
+  const res = await fetchWithRetry(`${BASE_URL}/tickets?${query}`, { headers: getAuthHeaders(), signal })
   const json = await res.json()
   return json.data
 }
@@ -49,7 +50,7 @@ export async function getTicketById(ticketId: string, signal?: AbortSignal): Pro
     return delay(ticket, mockDelayMs, signal)
   }
 
-  const res = await fetch(`${BASE_URL}/tickets/${ticketId}`, { headers: getAuthHeaders(), signal })
+  const res = await fetchWithRetry(`${BASE_URL}/tickets/${ticketId}`, { headers: getAuthHeaders(), signal })
   const json = await res.json()
   return json.data
 }
@@ -93,7 +94,7 @@ export async function getEventTickets(
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => [k, String(v)])
   )
-  const res = await fetch(`${BASE_URL}/events/${eventId}/tickets?${query}`, {
+  const res = await fetchWithRetry(`${BASE_URL}/events/${eventId}/tickets?${query}`, {
     headers: getAuthHeaders(),
     signal,
   })

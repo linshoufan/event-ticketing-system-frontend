@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/react"
 import Navbar from "./components/Navbar"
 import { useAutoLogout } from "./hooks/useAutoLogout"
 
-const LoginPage = lazy(() => import("./pages/LoginPage"))
+import LoginPage from "./pages/LoginPage"
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"))
 const EventListPage = lazy(() => import("./pages/EventListPage"))
 const EventDetailPage = lazy(() => import("./pages/EventDetailPage"))
@@ -71,7 +71,7 @@ function Layout() {
   const hideNavbar =
     location.pathname === "/" ||
     location.pathname === "/auth/callback" ||
-    location.pathname === "/onboarding"
+    location.pathname === "/onboarding" ||
     location.pathname === "/welcome"
 
   return (

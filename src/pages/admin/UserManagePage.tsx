@@ -72,6 +72,12 @@ function UserManagePage() {
   }
 
   async function handleDelete(userId: string) {
+    const target = users.find(u => u.userId === userId)
+    const currentUsername = localStorage.getItem("currentUsername") // 登入時順手存
+    if (target && target.username === currentUsername) {
+      alert("不能刪除自己的帳號")
+      return
+    }
     if (!confirm("確定要刪除這個使用者嗎？")) return
     try {
       await deleteUser(userId)

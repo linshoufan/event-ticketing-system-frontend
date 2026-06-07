@@ -68,6 +68,7 @@ export interface Transaction {
   selfDriving: boolean
   registeredAt: string
   ticketId: string | null
+  cancellationDeadline?: string | null   // ← 新增
 }
 
 export interface Ticket {
